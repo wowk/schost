@@ -11,126 +11,6 @@
 #include <netinet/ether.h>
 
 
-#if 1
-enum le_gap_address_type
-{
-    le_gap_address_type_public                                   = 0x0,
-    le_gap_address_type_random                                   = 0x1,
-    le_gap_address_type_public_identity                          = 0x2,
-    le_gap_address_type_random_identity                          = 0x3
-};
-
-enum le_gap_phy_type
-{
-    le_gap_phy_1m                                                = 0x1,
-    le_gap_phy_2m                                                = 0x2,
-    le_gap_phy_coded                                             = 0x4
-};
-
-enum le_gapconnectable_mode
-{
-    le_gap_non_connectable                                       = 0x0,
-    le_gap_directed_connectable                                  = 0x1,
-    le_gap_undirected_connectable                                = 0x2,
-    le_gap_connectable_scannable                                 = 0x2,
-    le_gap_scannable_non_connectable                             = 0x3,
-    le_gap_connectable_non_scannable                             = 0x4
-};
-
-enum le_gap_discoverable_mode
-{
-    le_gap_non_discoverable                                      = 0x0,
-    le_gap_limited_discoverable                                  = 0x1,
-    le_gap_general_discoverable                                  = 0x2,
-    le_gap_broadcast                                             = 0x3,
-    le_gap_user_data                                             = 0x4
-};
-
-enum le_gap_discover_mode
-{
-    le_gap_discover_limited                                      = 0x0,
-    le_gap_discover_generic                                      = 0x1,
-    le_gap_discover_observation                                  = 0x2
-};
-
-enum le_gap_adv_address_type
-{
-    le_gap_identity_address                                      = 0x0,
-    le_gap_non_resolvable                                        = 0x1
-};
-
-enum le_connection_security
-{
-    le_connection_mode1_level1                                   = 0x0,
-    le_connection_mode1_level2                                   = 0x1,
-    le_connection_mode1_level3                                   = 0x2,
-    le_connection_mode1_level4                                   = 0x3
-};
-
-enum gatt_att_opcode
-{
-    gatt_read_by_type_request                                    = 0x8,
-    gatt_read_by_type_response                                   = 0x9,
-    gatt_read_request                                            = 0xa,
-    gatt_read_response                                           = 0xb,
-    gatt_read_blob_request                                       = 0xc,
-    gatt_read_blob_response                                      = 0xd,
-    gatt_read_multiple_request                                   = 0xe,
-    gatt_read_multiple_response                                  = 0xf,
-    gatt_write_request                                           = 0x12,
-    gatt_write_response                                          = 0x13,
-    gatt_write_command                                           = 0x52,
-    gatt_prepare_write_request                                   = 0x16,
-    gatt_prepare_write_response                                  = 0x17,
-    gatt_execute_write_request                                   = 0x18,
-    gatt_execute_write_response                                  = 0x19,
-    gatt_handle_value_notification                               = 0x1b,
-    gatt_handle_value_indication                                 = 0x1d
-};
-
-enum gatt_client_config_flag
-{
-    gatt_disable                                                 = 0x0,
-    gatt_notification                                            = 0x1,
-    gatt_indication                                              = 0x2
-};
-
-enum gatt_execute_write_flag
-{
-    gatt_cancel                                                  = 0x0,
-    gatt_commit                                                  = 0x1
-};
-
-enum gatt_server_characteristic_status_flag
-{
-    gatt_server_client_config                                    = 0x1,
-    gatt_server_confirmation                                     = 0x2
-};
-
-
-enum test_packet_type
-{
-    test_pkt_prbs9                                               = 0x0,
-    test_pkt_11110000                                            = 0x1,
-    test_pkt_10101010                                            = 0x2,
-    test_pkt_carrier_deprecated                                  = 0x3,
-    test_pkt_11111111                                            = 0x4,
-    test_pkt_00000000                                            = 0x5,
-    test_pkt_00001111                                            = 0x6,
-    test_pkt_01010101                                            = 0x7,
-    test_pkt_pn9                                                 = 0xfd,
-    test_pkt_carrier                                             = 0xfe
-};
-
-enum test_phy
-{
-    test_phy_1m                                                  = 0x1,
-    test_phy_2m                                                  = 0x2,
-    test_phy_125k                                                = 0x3,
-    test_phy_500k                                                = 0x4
-};
-#endif
-
  /** The default serial port to use for BGAPI communication. */
 #if ((_WIN32 == 1) || (__CYGWIN__ == 1))
 static char *default_uart_port = "COM0";
@@ -154,51 +34,51 @@ static uint32_t default_baud_rate = 115200;
 
 static struct option options[] = {
     /* general options */
-    {"debug",           no_argument, 		0, 0},
-    {"help",	        no_argument, 		0, 0},
+    {"debug",           no_argument,        0, 0},
+    {"help",            no_argument,        0, 0},
     
     /* set sub options */
-    {"set",	            no_argument, 	    0, 0},
-        {"address",	    required_argument, 	0, 0},
+    {"set",             no_argument,        0, 0},
+        {"address",     required_argument,  0, 0},
     
     /* show sub options */
     {"show",            no_argument,        0, 0},
-        {"version",	    no_argument, 		0, 0},
-        {"btaddr",	    no_argument, 	0, 0},
+        {"version",     no_argument,        0, 0},
+        {"btaddr",      no_argument,        0, 0},
 
     /* dtm sub options */
-    {"dtm",		        no_argument,		0, 0},
+    {"dtm",             no_argument,        0, 0},
         /* dtm.tx sub options */
-        {"tx",		    no_argument, 		0, 0},
-            {"delay",	required_argument,  0, 0},
-            {"channel",	required_argument,  0, 0},
-            {"phy",		required_argument,  0, 0},
-            {"showpkt",	no_argument,        0, 0},
-            {"pwr",		required_argument,  0, 0},
-            {"pkttype",	required_argument,  0, 0},
-            {"pktlen",	required_argument,  0, 0},
+        {"tx",          no_argument,        0, 0},
+            {"delay",   required_argument,  0, 0},
+            {"channel", required_argument,  0, 0},
+            {"phy",     required_argument,  0, 0},
+            {"showpkt", no_argument,        0, 0},
+            {"pwr",     required_argument,  0, 0},
+            {"pkttype", required_argument,  0, 0},
+            {"pktlen",  required_argument,  0, 0},
         
         /* dtm.rx sub options */
-        {"rx",		    no_argument, 		0, 0},
-            {"delay",	required_argument,  0, 0},
-            {"channel",	required_argument,  0, 0},
-            {"phy",		required_argument,  0, 0},
-            {"showpkt",	no_argument,        0, 0},
+        {"rx",          no_argument,        0, 0},
+            {"delay",   required_argument,  0, 0},
+            {"channel", required_argument,  0, 0},
+            {"phy",     required_argument,  0, 0},
+            {"showpkt", no_argument,        0, 0},
 
     /* enter pair mode */
-    {"pair",            no_argument,       0, 0},
-        {"mode",        required_argument, 0, 0},
+    {"pair",            no_argument,        0, 0},
+        {"mode",        required_argument,  0, 0},
 
     /* scan sub options */
-    {"scan",	        no_argument, 	    0, 0},
+    {"scan",            no_argument,        0, 0},
         {"interval",    required_argument,  0, 0},
         {"winsize",     required_argument,  0, 0},
         {"type",        required_argument,  0, 0},
-        {"timeout",	    required_argument,	0, 0},
+        {"timeout",     required_argument,  0, 0},
 
     /* connect sub options */
-    {"connect",	        no_argument, 	    0, 0},
-        {"address",	    required_argument, 	0, 0},
+    {"connect",         no_argument,        0, 0},
+        {"address",     required_argument,  0, 0},
         {"addrtype",    required_argument,  0, 0},
         {"initphy",     required_argument,  0, 0},
 
@@ -207,14 +87,14 @@ static struct option options[] = {
         {"firmware",    required_argument,  0, 0},
 
     /* dev sub options */
-    {"dev",		        no_argument,		0, 0},
-        {"name",	    required_argument,	0, 0},
-        {"flowctrl",    required_argument,	0, 0},
-        {"baudrate",    required_argument,	0, 0},
-        {"timeout",	    required_argument,	0, 0},
+    {"dev",             no_argument,        0, 0},
+        {"name",        required_argument,  0, 0},
+        {"flowctrl",    required_argument,  0, 0},
+        {"baudrate",    required_argument,  0, 0},
+        {"timeout",     required_argument,  0, 0},
     
     /* end */
-    {0,			0,					0, 0},
+    {0, 0, 0, 0},
 };
 
 enum sub_option_e {
@@ -528,11 +408,11 @@ int parse_args(int argc, char** argv, struct option_args_t* args)
 
     /* set default args */
     strncpy(args.dev_name, default_uart_port, sizeof(args.dev_name));
-    args->dev.timeout	= 1000;
-    args->dev.baudrate	= default_baud_rate;
-    args->dtm.tx.phy	= test_phy_1m;
-    args->dtm.tx.pwr	= 80.0f;
-    args->dtm.rx.phy	= test_phy_1m;
+    args->dev.timeout   = 1000;
+    args->dev.baudrate  = default_baud_rate;
+    args->dtm.tx.phy    = test_phy_1m;
+    args->dtm.tx.pwr    = 80.0f;
+    args->dtm.rx.phy    = test_phy_1m;
     args->dtm.tx.pkttype = test_pkt_prbs9;
 
     int sub_opt_index = 0;
