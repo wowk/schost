@@ -1,6 +1,7 @@
 #ifndef SC_HOST_UTIL_H__
 #define SC_HOST_UTIL_H__
 
+#include <stdio.h>
 #include <stdlib.h>
 
 #define BLE_INFO       "/tmp/ble/"
@@ -13,5 +14,6 @@
 extern void echo(int append, const char* file, const char* format, ...);
 extern size_t cat(const char* file, char** pdata, size_t len);
 extern void show_file(FILE* fp, const char* file, size_t len);
+const const char* error_summary(int result);
 
 #endif

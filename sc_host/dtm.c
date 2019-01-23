@@ -25,11 +25,10 @@ enum dtm_state_e {
 };
  
 int delay_time = 0;
-enum dtm_state_e dtm_state = DTM_INIT;
+enum dtm_state_e dtm_state;
 struct gecko_msg_test_dtm_tx_rsp_t* txrsptr = NULL;
 struct gecko_msg_test_dtm_rx_rsp_t* rxrsptr = NULL;
 struct gecko_msg_test_dtm_end_rsp_t* endrsptr = NULL;
-struct gecko_msg_le_gap_connect_rsp_t* connrsptr = NULL;
 struct gecko_msg_test_dtm_completed_evt_t* completed_evt = NULL;
 
 extern const char* error_summary(int result);
@@ -52,7 +51,7 @@ static void dtm_tx_init(const struct option_args_t* args)
     uint8_t  phy = args->dtm.tx.phy;
  
     printf(">>>>>>>>> start tx test <<<<<<<<<\n\tsend tx command\n");
-    gecko_cmd_system_set_tx_power(args->tx_pwr);
+    gecko_cmd_system_set_tx_power(args->dev.txpwr);
     
     txrsptr = gecko_cmd_test_dtm_tx(pkttype, pktlen, channel, phy);
     
@@ -107,7 +106,7 @@ static void dtm_do_action(const struct option_args_t* args, struct gecko_cmd_pac
     }
 }
 
-void dtm_event_handler(struct gecko_cmd_packet *evt, const struct option_args_t* args)
+int dtm_event_handler(struct gecko_cmd_packet *evt, const struct option_args_t* args)
 {
     int msg_id = BGLIB_MSG_ID(evt->header);
 
@@ -133,5 +132,7 @@ void dtm_event_handler(struct gecko_cmd_packet *evt, const struct option_args_t*
     default:
         break;
     }
+
+    return 0;
 }
 

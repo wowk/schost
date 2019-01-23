@@ -9,7 +9,7 @@
 #include <errno.h>
 #include <getopt.h>
 #include <netinet/ether.h>
-
+#include "host_gecko.h"
 
  /** The default serial port to use for BGAPI communication. */
 #if ((_WIN32 == 1) || (__CYGWIN__ == 1))
@@ -113,7 +113,6 @@ enum sub_option_e {
 
 static int parse_int(char* s, long* value, long min, long max, const char* name)
 {
-    int ret = 0;
     int base;
     char* endptr = NULL;
 
@@ -148,7 +147,6 @@ return_error:
 
 static int parse_float(char* s, double* value, double min, double max, const char* name)
 {
-    int ret = 0;
     char* endptr = NULL;
 
     if ( !s || !value ) {
@@ -301,7 +299,7 @@ void print_args(const struct option_args_t* args)
     if(args->show.on){
         printf("\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\nshow:\n");
         printf("\t%-16s: %u\n",     "version",  args->show.version);
-        printf("\t%-16s: %u\n",     "address",  args->show.address);
+        printf("\t%-16s: %u\n",     "address",  args->show.btaddr);
 
     }
 
@@ -407,9 +405,10 @@ int parse_args(int argc, char** argv, struct option_args_t* args)
     memset(args, 0, sizeof(struct option_args_t));
 
     /* set default args */
-    strncpy(args.dev_name, default_uart_port, sizeof(args.dev_name));
+    strncpy(args->dev.name, default_uart_port, sizeof(args->dev.name));
     args->dev.timeout   = 1000;
     args->dev.baudrate  = default_baud_rate;
+    args->dev.txpwr     = 80.f;
     args->dtm.tx.phy    = test_phy_1m;
     args->dtm.tx.pwr    = 80.0f;
     args->dtm.rx.phy    = test_phy_1m;
@@ -464,12 +463,12 @@ int parse_args(int argc, char** argv, struct option_args_t* args)
             else if(sub_opt_status[sub_opt_index] == OPT_CONNECT){
                 if(op == 0 && !strcmp("address", options[option_index].name)){
                     //printf("address: %s\n", optarg);
-                    parse_macaddr(optarg, args->connect.address, sizeof(args->connect.address), "connect.address");
+                    parse_macaddr(optarg, (char*)args->connect.address, sizeof(args->connect.address), "connect.address");
                 }else if(op == 0 && !strcmp("addrtype", options[option_index].name)){
                     parse_int(optarg, &value, 0, CHAR_MAX, "connect.addrtype");
                     args->connect.addrtype = (uint8_t)value;
                 }else if(op == 0 && !strcmp("initphy", options[option_index].name)){
-                    parse_int(optarg, &value, 0, 4, "connect.addrtype");
+                    parse_init_phy(optarg, &value, "connect.addrtype");
                     args->connect.initphy = (uint8_t)value;
                 }else{
                     sub_opt_index --;
@@ -501,7 +500,7 @@ int parse_args(int argc, char** argv, struct option_args_t* args)
             /* parse set's sub option */
             else if(sub_opt_status[sub_opt_index] == OPT_SET){
                 if(op == 0 && !strcmp("address", options[option_index].name)){
-                    parse_macaddr(optarg, args->set.address, sizeof(args->set.address), "set.address");
+                    parse_macaddr(optarg, (char*)args->set.address, sizeof(args->set.address), "set.address");
                 }else{
                     sub_opt_index --;
                     continue;
@@ -511,7 +510,7 @@ int parse_args(int argc, char** argv, struct option_args_t* args)
             /* parse show's sub option */
             else if(sub_opt_status[sub_opt_index] == OPT_SHOW){
                 if(op == 0 && !strcmp("btaddr", options[option_index].name)){
-                    args->show.address = 1;
+                    args->show.btaddr = 1;
                 }else if(op == 0 && !strcmp("version", options[option_index].name)){
                     args->show.version = 1;
                 }else{

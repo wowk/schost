@@ -78,10 +78,10 @@ ifeq (clean,$(findstring clean, $(MAKECMDGOALS)))
 endif
 
 
-TOOLCHAIN = 
-#CC = gcc
-#LD = ld
-#AR = ar
+TOOLCHAIN = /opt/toolchains/crosstools-arm-gcc-5.5-linux-4.1-glibc-2.26-binutils-2.28.1/usr/bin/arm-linux-
+CC = $(TOOLCHAIN)gcc
+LD = $(TOOLCHAIN)ld
+AR = $(TOOLCHAIN)ar
 
 
 ####################################################################
@@ -89,6 +89,7 @@ TOOLCHAIN =
 ####################################################################
 
 INCLUDEPATHS += \
+-I./ \
 -I../common/uart \
 -I../common/ \
 -I../protocol/bluetooth/ble_stack/inc/common \
@@ -147,9 +148,8 @@ override LDFLAGS +=
 
 C_SRC +=  \
 ../protocol/bluetooth/ble_stack/src/host/gecko_bglib.c \
-main.c \
-app.c \
-util.c \
+main.c app.c util.c \
+set.c show.c connect.c pair.c upgrade.c dtm.c scan.c options.c
 
 # this file should be the last added
 ifeq ($(OS),posix)

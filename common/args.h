@@ -10,6 +10,7 @@ struct option_args_t {
 	    uint32_t flowctrl;
 	    uint32_t baudrate;
 	    uint32_t timeout;
+	    float txpwr;
     } dev;
 
     struct {
@@ -33,6 +34,7 @@ struct option_args_t {
     struct {
         uint8_t on;
         uint8_t mode;
+	    float txpwr;
     } pair;
    
     struct {
@@ -65,7 +67,7 @@ struct option_args_t {
     struct {
         uint8_t on;
         uint8_t version;
-        uint8_t address;
+        uint8_t btaddr;
     } show;
 
     struct {

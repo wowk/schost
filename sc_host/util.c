@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
@@ -73,4 +74,58 @@ void show_file(FILE* fp, const char* file, size_t len)
         fprintf(fp, "%s\n", pdata);
         free(pdata);
     }
+}
+
+const char* error_summary(int result)
+{
+    const char* errptr = "";
+    uint16_t type = (result >> 8);
+
+    switch ( type ) {
+    case 0x0:
+        errptr = "success";
+        break;
+
+    case 0x01:
+        errptr = "errors related to BGAPI protocol";
+        break;
+
+    case 0x02:
+        errptr = "bluetooth errors";
+        break;
+
+    case 0x03:
+        errptr = "errors from security protocol";
+        break;
+
+    case 0x04:
+        errptr = "errors from attribute protocol";
+        break;
+
+    case 0x05:
+        errptr = "errors related hardware";
+        break;
+
+    case 0x9:
+        errptr = "filesystem errors";
+        break;
+
+    case 0xa:
+        errptr = "application errors";
+        break;
+
+    case 0xb:
+        errptr = "security errors";
+        break;
+
+    case 0xc:
+        errptr = "bluetooth mesh errors";
+        break;
+
+    default:
+        errptr = "unknown error";
+        break;
+    }
+
+    return errptr;
 }

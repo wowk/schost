@@ -15,6 +15,8 @@
 
 #include "args.h"
 
+struct gecko_cmd_packet;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
