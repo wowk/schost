@@ -61,13 +61,13 @@ static int upgrade_bt_fw(const char* firmware_file)
     return gecko_cmd_dfu_flash_upload_finish()->result;
 }
 
-int upgrade_event_handler(struct gecko_cmd_packet *evt, const struct option_args_t* args)
+int upgrade_event_handler(int msgid, struct gecko_cmd_packet *evt, struct option_args_t* args)
 {
     int result = 0;
     struct gecko_msg_dfu_boot_evt_t* dfu_boot_evt;
 
     /* Handle events */
-    switch (BGLIB_MSG_ID(evt->header)) {
+    switch (msgid){
     case gecko_evt_dfu_boot_id:
         dfu_boot_evt = &evt->data.evt_dfu_boot;
         printf("DFU OK\nBootloader version: %u (0x%x)\n", dfu_boot_evt->version, dfu_boot_evt->version);

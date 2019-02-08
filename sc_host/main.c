@@ -44,7 +44,6 @@ BGLIB_DEFINE();
 
 static int app_serial_port_init(const struct option_args_t* args, int32_t timeout);
 static void on_message_send(uint32_t msg_len, uint8_t *msg_data);
-static void app_handle_events(struct gecko_cmd_packet *evt, struct option_args_t* args);
 static void system_init_action(void);
 static void load_bt_dev_info(void);
 
@@ -57,6 +56,7 @@ int main(int argc, char *argv[])
     printf("Build Time: Date: %s, Time: %s\n", __DATE__, __TIME__);
 
     if ( 0 > parse_args(argc, argv, &args) ) {
+        printf("parse args failed\n");
         exit(EXIT_FAILURE);
     }
 
@@ -84,9 +84,10 @@ int main(int argc, char *argv[])
             if (args.show.btaddr) {
                 show_file(stdout, BLE_ADDRESS, 0);
             }
-        }else if (args.set.on) {
+        }else{
             printf("shoud stop exist sc_host process first\n");
         }
+        printf("???\n");
         exit(0);
     } else {
         /* no other sc_host process */
@@ -117,11 +118,15 @@ int main(int argc, char *argv[])
         msg = BGLIB_MSG_ID(evt->header);
         if(!booted){
             if(msg == gecko_evt_system_boot_id){
+                if(args.debug)
+                    printf("System booted\n");
                 booted = true;
                 system_init_action();
                 load_bt_dev_info();
+                app_handle_events(evt, &args);
             }else if(msg == gecko_evt_dfu_boot_id){
                 booted = true;
+                app_handle_events(evt, &args);
             }else{
                 if(args.debug){
                     printf("Event: 0x%04x\n", msg);
@@ -129,9 +134,9 @@ int main(int argc, char *argv[])
                 usleep(50000);
                 continue;
             }
+        }else{
+            app_handle_events(evt, &args);
         }
-
-        app_handle_events(evt, &args);
     }
 
     return -1;
@@ -166,35 +171,11 @@ static int app_serial_port_init(const struct option_args_t* args, int32_t timeou
     return uartOpen((int8_t*)args->dev.name, args->dev.baudrate, args->dev.flowctrl, args->dev.timeout);
 }
 
-
-static void app_handle_events(struct gecko_cmd_packet *evt, struct option_args_t* args)
-{
-    int msgid = BGLIB_MSG_ID(evt->header);
-    if(args->show.on){
-        show_event_handler(msgid, evt, args);
-        args->show.on = 0;
-    }else if(args->set.on){
-        set_event_handler(msgid, evt, args);
-        args->set.on = 0;
-    }else if(args->pair.on){
-        pair_event_handler(msgid, evt, args);
-    }else if(args->scan.on){
-        scan_event_handler(msgid, evt, args);
-    }else if(args->connect.on){
-        connect_event_handler(msgid, evt, args);
-    }else if(args->upgrade.on){
-        upgrade_event_handler(msgid, evt, args);
-    }else{
-        exit(0);
-    }
-}
-
 static void system_init_action(void)
 {
     /* BT advertising may affect other functions,
      * we should stop it after system boot up and
      * start it when we need it */
-    printf("Stop advertising\n");
     gecko_cmd_le_gap_stop_advertising(0);
     sleep(1);
 }
@@ -202,8 +183,8 @@ static void system_init_action(void)
 static void load_bt_dev_info(void)
 {
     struct gecko_msg_flash_ps_load_rsp_t* rsp = gecko_cmd_flash_ps_load(0x4001);
-    echo(0, BLE_VERSION, "Version: %.2X\n", (uint8_t)rsp->value.data[0]);
+    echo(0, BLE_VERSION, "Version: %.2X", (uint8_t)rsp->value.data[0]);
 
     struct gecko_msg_system_get_bt_address_rsp_t* btaddr = gecko_cmd_system_get_bt_address();
-    echo(0, BLE_ADDRESS, "BT address: %s\n", ether_ntoa((struct ether_addr*)btaddr));
+    echo(0, BLE_ADDRESS, "BT address: %s", ether_ntoa((struct ether_addr*)btaddr));
 }

@@ -18,7 +18,7 @@
 #include "util.h"
 
 
-int show_event_handler(int msgid, struct gecko_cmd_packet *evt, const struct option_args_t* args)
+int show_event_handler(int msgid, struct gecko_cmd_packet *evt, struct option_args_t* args)
 {
     switch(msgid){
     case gecko_evt_system_boot_id:
@@ -28,6 +28,7 @@ int show_event_handler(int msgid, struct gecko_cmd_packet *evt, const struct opt
         if (args->show.btaddr) {
             show_file(stdout, BLE_ADDRESS, 0);
         }
+        return 1;
         break;
 
     default:

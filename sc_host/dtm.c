@@ -18,6 +18,8 @@
 /* Own header */
 #include "app.h"
 #include "util.h"
+#include <stdarg.h>
+
 
 enum dtm_state_e {
     DTM_TX_INIT, DTM_TX_START, DTM_TX_END,
@@ -34,13 +36,14 @@ struct gecko_msg_test_dtm_completed_evt_t* completed_evt = NULL;
 extern const char* error_summary(int result);
 
 void show_pkt(const char* data, size_t len)
-{
-
-}
+{}
 
 void show_result(int result, const char* fmt, ...)
 {
-
+    va_list val;
+    va_start(val, fmt);
+    vprintf(fmt, val);
+    va_end(val);
 }
 
 static void dtm_tx_init(const struct option_args_t* args)
@@ -72,12 +75,11 @@ static void dtm_rx_init(const struct option_args_t* args)
     rxrsptr = gecko_cmd_test_dtm_rx(channel, phy);
     
     delay_time = args->dtm.rx.delay / 1000;
-
     gecko_cmd_hardware_set_soft_timer(0, 0, 0);
     gecko_cmd_hardware_set_soft_timer(32768, 0, 0);
 }
 
-static void dtm_do_action(const struct option_args_t* args, struct gecko_cmd_packet* evt)
+static void dtm_do_action(struct option_args_t* args, struct gecko_cmd_packet* evt)
 {
     if(dtm_state == DTM_TX_INIT){
         dtm_tx_init(args);
@@ -86,30 +88,27 @@ static void dtm_do_action(const struct option_args_t* args, struct gecko_cmd_pac
         dtm_rx_init(args);
         dtm_state = DTM_RX_START;
     }else if(dtm_state == DTM_TX_START){
-        completed_evt = &evt->data.evt_test_dtm_completed;
-        endrsptr = gecko_cmd_test_dtm_end();
         dtm_state = DTM_TX_END;
     }else if(dtm_state == DTM_RX_START){
-        completed_evt = &evt->data.evt_test_dtm_completed;
-        endrsptr = gecko_cmd_test_dtm_end();
         dtm_state = DTM_RX_END;
     }else if(dtm_state == DTM_TX_END){
         completed_evt = &evt->data.evt_test_dtm_completed;
-        ;//show result
-        if(args->dtm.tx.on){
+        show_result(0, "total %u pkts were sent\n", completed_evt->number_of_packets);
+        args->dtm.tx.on = 0;
+        if(args->dtm.rx.on){
             dtm_state = DTM_RX_INIT;
+            dtm_do_action(args, NULL);
         }
     }else if(dtm_state == DTM_RX_END){
         completed_evt = &evt->data.evt_test_dtm_completed;
-        ;//show result
+        show_result(0, "total %u pkts were received\n", completed_evt->number_of_packets);
+        args->dtm.rx.on = 0;
         exit(0);
     }
 }
 
-int dtm_event_handler(struct gecko_cmd_packet *evt, const struct option_args_t* args)
+int dtm_event_handler(int msg_id, struct gecko_cmd_packet *evt, struct option_args_t* args)
 {
-    int msg_id = BGLIB_MSG_ID(evt->header);
-
     switch(msg_id){
     case gecko_evt_system_boot_id:
         if(args->dtm.tx.on)
@@ -121,8 +120,10 @@ int dtm_event_handler(struct gecko_cmd_packet *evt, const struct option_args_t* 
 
     case gecko_evt_hardware_soft_timer_id:
         if((--delay_time) == 0){
-            dtm_do_action(args, evt);
+            //dtm_do_action(args, evt);
+            endrsptr = gecko_cmd_test_dtm_end();
         }
+        printf("\ttimer's up: %d\n", delay_time);
         break;
 
     case gecko_evt_test_dtm_completed_id:
@@ -132,7 +133,7 @@ int dtm_event_handler(struct gecko_cmd_packet *evt, const struct option_args_t* 
     default:
         break;
     }
-
-    return 0;
+    
+    return (args->dtm.tx.on == 0 && args->dtm.rx.on == 0);
 }
 

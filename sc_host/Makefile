@@ -212,7 +212,7 @@ $(OBJ_DIR)/%.o: %.S
 $(EXE_DIR)/$(PROJECTNAME): $(OBJS) $(LIBS)
 	@echo "Linking target: $@"
 	$(CC) $(LDFLAGS) $^ -o $@
-
+	cp $@ /tmp/
 
 clean:
 ifeq ($(filter $(MAKECMDGOALS),all debug release),)

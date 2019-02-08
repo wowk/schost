@@ -30,8 +30,9 @@
 #include "util.h"
 
 
-int set_event_handler(int msgid, struct gecko_cmd_packet *evt, const struct option_args_t* args)
+int set_event_handler(int msgid, struct gecko_cmd_packet *evt, struct option_args_t* args)
 {
+    printf("HHHHHHHHHHAAAAAAAAAAA\n");
     switch (msgid) {
     case gecko_evt_system_boot_id:
         /* set BT address */
@@ -44,8 +45,13 @@ int set_event_handler(int msgid, struct gecko_cmd_packet *evt, const struct opti
             } else {
                 echo(0, BLE_ADDRESS, "BT address: %s\n", args->set.address);
             }
-            exit(0);
         }
+
+        if(args->set.name[0] != 0){
+            gecko_cmd_system_set_device_name(0, strlen(args->set.name), args->set.name);
+            echo(0, BLE_DEVNAME, "Device Name: %s", args->set.name);
+        }
+        exit(0);
         break;
     default:
         break;

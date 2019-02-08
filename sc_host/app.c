@@ -7,22 +7,26 @@
 
 void app_handle_events(struct gecko_cmd_packet *evt, struct option_args_t* args)
 {
+    int ret = 0;
     int msgid = BGLIB_MSG_ID(evt->header);
+    
     if(args->show.on){
-        show_event_handler(msgid, evt, args);
-        args->show.on = 0;
+        ret = show_event_handler(msgid, evt, args);
     }else if(args->set.on){
-        set_event_handler(msgid, evt, args);
-        args->set.on = 0;
+        ret = set_event_handler(msgid, evt, args);
+    }else if(args->dtm.on && (args->dtm.tx.on || args->dtm.rx.on)){
+        ret = dtm_event_handler(msgid, evt, args);
     }else if(args->pair.on){
-        pair_event_handler(msgid, evt, args);
+        ret = pair_event_handler(msgid, evt, args);
     }else if(args->scan.on){
-        scan_event_handler(msgid, evt, args);
+        ret = scan_event_handler(msgid, evt, args);
     }else if(args->connect.on){
-        connect_event_handler(msgid, evt, args);
+        ret = connect_event_handler(msgid, evt, args);
     }else if(args->upgrade.on){
-        upgrade_event_handler(msgid, evt, args);
-    }else{
+        ret = upgrade_event_handler(msgid, evt, args);
+    }
+
+    if(ret){
         exit(0);
     }
 }

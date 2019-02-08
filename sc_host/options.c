@@ -40,6 +40,7 @@ static struct option options[] = {
     /* set sub options */
     {"set",             no_argument,        0, 0},
         {"address",     required_argument,  0, 0},
+        {"name",        required_argument,  0, 0},
     
     /* show sub options */
     {"show",            no_argument,        0, 0},
@@ -71,6 +72,7 @@ static struct option options[] = {
 
     /* scan sub options */
     {"scan",            no_argument,        0, 0},
+        {"mode",        required_argument,  0, 0},
         {"interval",    required_argument,  0, 0},
         {"winsize",     required_argument,  0, 0},
         {"type",        required_argument,  0, 0},
@@ -92,6 +94,7 @@ static struct option options[] = {
         {"flowctrl",    required_argument,  0, 0},
         {"baudrate",    required_argument,  0, 0},
         {"timeout",     required_argument,  0, 0},
+        {"txpwr",        required_argument,  0, 0},
     
     /* end */
     {0, 0, 0, 0},
@@ -240,7 +243,7 @@ static int parse_scan_phy(char* s, long* value, const char* name)
     return 0;
 }
 
-static int parse_scan_type(char* s, long* value, const char* name)
+static int parse_scan_mode(char* s, long* value, const char* name)
 {
     if(!strcasecmp(s, "limited")){
         *value = le_gap_discover_limited;
@@ -306,6 +309,7 @@ void print_args(const struct option_args_t* args)
     if(args->set.on){
         printf("\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\nset:\n");
         printf("\t%-16s: %s\n",     "address",  args->set.address);
+        printf("\t%-16s: %s\n",     "name",     args->set.name);
     }
 
     if(args->scan.on){
@@ -361,32 +365,49 @@ void print_args(const struct option_args_t* args)
 
 void usage(const char* app_name)
 {
-    printf("usage: %s\n" \
-           "\t[ --help ]                                          : show help info\n\n"
-           "\t[ --debug ]                                         : show debug info\n\n"
-           "\t[ --version ]                                       : show version\n\n"
-           "\t[ --address ]                                       : show BT address\n\n"
-           "\t[ --setaddr ] <BT address>                          : set BT address\n\n"
-           "\t[ --upgrade ] <firmware>                            : upgrade BT firmware\n\n"
-           "\t[ --tx    ]                                         : Config tx\n"
-           "\t       [ --channel | -c ]   <0-39>                  : working channel\n"
-           "\t       [ --phy     | -p ]   <1M | 2M | 125K | 500K> : phy type\n"
-           "\t       [ --pkttype | -t ]   <pkt_pn9 | ...>         : packet type\n"
-           "\t       [ --pktlen  | -l ]                           : packet length\n"
-           "\t       [ --pwr     | -P ]                           : tx power\n"
-           "\t       [ --delay   | -d ]                           : tx test time\n"
-           "\t       [ --showpkt | -s ]                           : show packet in hex format\n\n"
-           "\t[ --rx    ]                                         : Config rx\n"
-           "\t       [ --channel | -c ]   <0-39>                  : working channel\n"
-           "\t       [ --phy     | -p ]   <1M | 2M | 125K | 500K> : phy type\n"
-           "\t       [ --delay   | -d ]                           : rx test time\n\n"
-           "\t       [ --showpkt | -s ]                           : show packet in hex format\n\n"
-           "\t[ --pair  ]                                         : pair new device\n"
-           "\t[ --dev   ]                                         : Config uart\n"
-           "\t       [ --baudrate ]                               : set baudrate\n"
-           "\t       [ --flowctrl ]                               : set flowctrl bits\n"
-           "\t       [ --timeout  ]                               : set timeout\n"
-           "\t       [ --name     ]                               : set uart device\n",
+    printf("usage: %s\n" 
+           "\t[ --help    ]                                                : show help info\n\n"
+           "\t[ --debug   ]                                                : show debug info\n\n"
+           "\t[ --show    ]                                                : show system info\n"
+           "\t       [ --version  ]                                        : show version\n"
+           "\t       [ --btaddr   ]                                        : show BT address\n\n"
+           "\t[ --set     ]                                                : configure system\n"
+           "\t       [ --name     ] <name>                                 : set BT SSID\n"
+           "\t       [ --address  ] <BT address>                           : set BT address\n\n"
+           "\t[ --scan    ]                                                : scan BT SSID\n"
+           "\t       [ --interval ]                                        : set scan interval\n"
+           "\t       [ --winsize  ]                                        : set scan window size\n"
+           "\t       [ --type     ]                                        : set scan type\n"
+           "\t       [ --mode     ]                                        : set scan mode\n"
+           "\t       [ --timeout  ]                                        : set scan timeout\n\n"
+           "\t[ --connect ]                                                : connect device\n"
+           "\t       [ --address  ]                                        : set remote device's address\n"
+           "\t       [ --addrtype ]                                        : set address type\n"
+           "\t       [ --initphy  ]                                        : set init phy\n\n"
+           "\t[ --upgrade ]                                                : upgrade BT firmware\n"
+           "\t       [ --firmware ] <firmware>                             : firmware file\n\n"
+           "\t[ --dtm   ]                                                  : dtm test\n"
+           "\t       [ --tx       ]                                        : config tx\n"
+           "\t                [ --channel | -c ]   <0-39>                  : working channel\n"
+           "\t                [ --phy     | -p ]   <1M | 2M | 125K | 500K> : phy type\n"
+           "\t                [ --pkttype | -t ]   <pkt_pn9 | ...>         : packet type\n"
+           "\t                [ --pktlen  | -l ]                           : packet length\n"
+           "\t                [ --pwr     | -P ]                           : set dtm tx power\n"
+           "\t                [ --delay   | -d ]                           : set tx test time\n"
+           "\t                [ --showpkt | -s ]                           : show packet in hex format\n"
+           "\t       [ --rx       ]                                        : Config rx\n"
+           "\t                [ --channel | -c ]   <0-39>                  : working channel\n"
+           "\t                [ --phy     | -p ]   <1M | 2M | 125K | 500K> : phy type\n"
+           "\t                [ --delay   | -d ]                           : rx test time\n"
+           "\t                [ --showpkt | -s ]                           : show packet in hex format\n\n"
+           "\t[ --pair  ]                                                  : pair new device\n"
+           "\t       [ --mode     ]                                        : pairing mode\n\n"
+           "\t[ --dev   ]                                                  : Config uart\n"
+           "\t       [ --baudrate ]                                        : set baudrate\n"
+           "\t       [ --flowctrl ]                                        : set flowctrl bits\n"
+           "\t       [ --timeout  ]                                        : set timeout\n"
+           "\t       [ --name     ]                                        : set uart device\n"
+           "\t       [ --txpwr    ]                                        : set system tx pwr\n",
            app_name);
 }
 
@@ -501,6 +522,8 @@ int parse_args(int argc, char** argv, struct option_args_t* args)
             else if(sub_opt_status[sub_opt_index] == OPT_SET){
                 if(op == 0 && !strcmp("address", options[option_index].name)){
                     parse_macaddr(optarg, (char*)args->set.address, sizeof(args->set.address), "set.address");
+                }else if(op == 0 && !strcmp("name", options[option_index].name)){
+                    strncpy(args->set.name, optarg, strlen(args->set.name));
                 }else{
                     sub_opt_index --;
                     continue;
@@ -522,6 +545,7 @@ int parse_args(int argc, char** argv, struct option_args_t* args)
             /* parse dtm's sub option */
             else if(sub_opt_status[sub_opt_index] == OPT_DTM){
                 //printf("dtm.%s\n", options[option_index].name);
+                args->dtm.on = 1;
                 if(op == 0 && !strcmp("rx", options[option_index].name)){
                     args->dtm.rx.on = 1;
                     sub_opt_status[++sub_opt_index] = OPT_RX;
@@ -593,8 +617,11 @@ int parse_args(int argc, char** argv, struct option_args_t* args)
                     parse_int(optarg, &value, 0, INT_MAX, "scan.winsize");
                     args->scan.winsize = (uint32_t)value;
                 } else if ( op == 0 && !strcmp("type", options[option_index].name) ) {
-                    parse_scan_type(optarg, &value, "scan.type");
+                    parse_int(optarg, &value, 0, 1, "scan.type");
                     args->scan.type = (uint32_t)value;
+                } else if ( op == 0 && !strcmp("mode", options[option_index].name) ) {
+                    parse_scan_mode(optarg, &value, "scan.mode");
+                    args->scan.mode = (uint8_t)value;
                 } else if ( op == 0 && !strcmp("timeout", options[option_index].name) ) {
                     parse_int(optarg, &value, 0, INT_MAX, "scan.timeout");
                     args->scan.timeout = (uint32_t)value;
@@ -617,6 +644,9 @@ int parse_args(int argc, char** argv, struct option_args_t* args)
                 } else if ( op == 0 && !strcmp("timeout", options[option_index].name) ) {
                     parse_int(optarg, &value, 0, INT_MAX, "timeout");
                     args->dev.timeout = (uint32_t)value;
+                } else if ( op == 0 && !strcmp("txpwr", options[option_index].name) ) {
+                    parse_float(optarg, &dvalue, -100000.0, 100000.0, "dev.txpwr");
+                    args->dev.txpwr = (float)dvalue;
                 } else {
                     sub_opt_index --;
                     continue;

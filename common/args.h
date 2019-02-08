@@ -73,6 +73,7 @@ struct option_args_t {
     struct {
         uint8_t on;
         uint8_t address[18];
+        uint8_t name[64];
     } set;
 
 	uint8_t debug;

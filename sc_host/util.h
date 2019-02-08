@@ -10,6 +10,7 @@
 #define BLE_NEWADDR    BLE_INFO"newaddr"
 #define BLE_NEIGHBORS  BLE_INFO"neighbors"
 #define BLE_CONNECTION BLE_INFO"connection"
+#define BLE_DEVNAME    BLE_INFO"devname"
 
 extern void echo(int append, const char* file, const char* format, ...);
 extern size_t cat(const char* file, char** pdata, size_t len);
