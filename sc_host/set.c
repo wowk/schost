@@ -30,32 +30,30 @@
 #include "util.h"
 
 
-int set_event_handler(int msgid, struct gecko_cmd_packet *evt, struct option_args_t* args)
+int set_cmd_handler(struct sock_t* sock, struct option_args_t* args)
 {
-    printf("HHHHHHHHHHAAAAAAAAAAA\n");
-    switch (msgid) {
-    case gecko_evt_system_boot_id:
-        /* set BT address */
-        if(args->set.address[0] != 0){
-            bd_addr addr;
-            memcpy(&addr, ether_aton((char*)args->set.address), 6);
-            struct gecko_msg_system_set_bt_address_rsp_t* result = gecko_cmd_system_set_bt_address(addr);
-            if (result->result) {
-                printf("Failed to assign BT address: %s\n", error_summary(result->result));
-            } else {
-                echo(0, BLE_ADDRESS, "BT address: %s\n", args->set.address);
-            }
-        }
+    char msg[128] = "";
 
-        if(args->set.name[0] != 0){
-            gecko_cmd_system_set_device_name(0, strlen(args->set.name), args->set.name);
-            echo(0, BLE_DEVNAME, "Device Name: %s", args->set.name);
+    if(args->set.address[0] != 0){
+        bd_addr addr;
+        memcpy(&addr, ether_aton((char*)args->set.address), 6);
+        
+        struct gecko_msg_system_set_bt_address_rsp_t* result = gecko_cmd_system_set_bt_address(addr);
+        if (result->result) {
+            snprintf(msg, sizeof(msg), "Failed to assign BT address: %s",
+                    error_summary(result->result));
+        } else {
+            snprintf(msg, sizeof(msg), "BT address: %s", args->set.address);
         }
-        exit(0);
-        break;
-    default:
-        break;
+        send_socket(sock, 0, 1, msg, strlen(msg));
+    }
+
+    if(args->set.name[0] != 0){
+        gecko_cmd_system_set_device_name(0, strlen((char*)args->set.name), args->set.name);
+        snprintf(msg, sizeof(msg), "Device Name: %s", args->set.name);
+        send_socket(sock, 0, 1, msg, strlen(msg));
     }
 
     return 0;
 }
+

@@ -18,21 +18,12 @@
 #include "util.h"
 
 
-int show_event_handler(int msgid, struct gecko_cmd_packet *evt, struct option_args_t* args)
+int show_cmd_handler(struct sock_t* sock, struct option_args_t* args)
 {
-    switch(msgid){
-    case gecko_evt_system_boot_id:
-        if(args->show.version){
-            show_file(stdout, BLE_VERSION, 0);
-        }
-        if (args->show.btaddr) {
-            show_file(stdout, BLE_ADDRESS, 0);
-        }
-        return 1;
-        break;
-
-    default:
-        break;
+    if(args->show.version){
+    }
+    
+    if (args->show.btaddr) {
     }
 
     return 0;

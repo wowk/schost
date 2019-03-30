@@ -14,6 +14,7 @@
 
 
 #include "args.h"
+#include "sock.h"
 
 struct gecko_cmd_packet;
 
@@ -21,38 +22,28 @@ struct gecko_cmd_packet;
 extern "C" {
 #endif
 
+int show_cmd_handler(struct sock_t* sock, struct option_args_t* args);
+int set_cmd_handler(struct sock_t* sock, struct option_args_t* args);
 
-    /***********************************************************************************************//**
-     * \defgroup app Application Code
-     * \brief Sample Application Implementation
-     **************************************************************************************************/
+int dtm_cmd_handler(struct sock_t* sock, struct option_args_t* args);
+int dtm_event_handler(struct sock_t* sock, struct option_args_t* args, 
+                        struct gecko_cmd_packet *evt);
 
-    /***********************************************************************************************//**
-     * @addtogroup Application
-     * @{
-     **************************************************************************************************/
+int scan_cmd_handler(struct sock_t* sock, struct option_args_t* args);
+int scan_event_handler(struct sock_t* sock, struct option_args_t* args, 
+                        struct gecko_cmd_packet *evt);
 
-    /***********************************************************************************************//**
-     * @addtogroup app
-     * @{
-     **************************************************************************************************/
+int connect_cmd_handler(struct sock_t* sock, struct option_args_t* args);
+int connect_event_handler(struct sock_t* sock, struct option_args_t* args, 
+                        struct gecko_cmd_packet *evt);
 
-    /***************************************************************************************************
-     * Type Definitions
-     **************************************************************************************************/
+int pair_cmd_handler(struct sock_t* sock, struct option_args_t* args);
+int pair_event_handler(struct sock_t* sock, struct option_args_t* args, 
+                        struct gecko_cmd_packet *evt);
 
-    /***************************************************************************************************
-     * Function Declarations
-     **************************************************************************************************/
-
-    /***********************************************************************************************//**
-     *  \brief  Handle application events.
-     *  \param[in]  evt  incoming event ID
-     **************************************************************************************************/
-    void app_handle_events(struct gecko_cmd_packet *evt, struct option_args_t* args);
-
-    /** @} (end addtogroup app) */
-    /** @} (end addtogroup Application) */
+int upgrade_cmd_handler(struct sock_t* sock, struct option_args_t* args);
+int upgrade_event_handler(struct sock_t* sock, struct option_args_t* args, 
+                        struct gecko_cmd_packet* evt);
 
 #ifdef __cplusplus
 };

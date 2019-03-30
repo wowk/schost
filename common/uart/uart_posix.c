@@ -58,6 +58,11 @@ static int32_t uartCloseSerial(int32_t handle);
 /***************************************************************************************************
    Public Function Definitions
  **************************************************************************************************/
+inline int32_t uartHandle(void)
+{
+    return serialHandle;
+}
+
 int32_t uartOpen(int8_t* port, uint32_t baudRate, uint32_t rtsCts, int32_t timeout)
 {
     uint8_t buf[4];

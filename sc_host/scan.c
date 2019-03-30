@@ -20,6 +20,8 @@
 #include "host_gecko.h"
 #include "app.h"
 #include "util.h"
+#include "sock.h"
+
 
 static int scan_time = 0;
 
@@ -102,11 +104,16 @@ static void free_neigh_list(struct neigh_list_t* list)
     }
 }
 
-int  scan_event_handler(int msgid, struct gecko_cmd_packet *evt, struct option_args_t* args)
+int  scan_cmd_handler(struct sock_t* sock, struct option_args_t* args)
+{
+    return 0;
+}
+
+int  scan_event_handler(struct sock_t* sock, struct option_args_t* args, struct gecko_cmd_packet* evt)
 {
     struct gecko_msg_le_gap_scan_response_evt_t* scanrsptr = NULL;
 
-    switch (msgid) {
+    switch (BGLIB_MSG_ID(evt->header)) {
     case gecko_evt_system_boot_id:
         remove(BLE_NEIGHBORS);
         LIST_INIT(&neigh_list);

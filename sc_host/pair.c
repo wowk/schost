@@ -16,11 +16,19 @@
 #include "host_gecko.h"
 #include "app.h"
 #include "util.h"
+#include "sock.h"
 
 
-int pair_event_handler(int msgid, struct gecko_cmd_packet *evt, struct option_args_t* args)
+int pair_cmd_handler(struct sock_t* sock, struct option_args_t* args)
 {
-    switch (msgid) {
+    return 0;
+}
+
+int pair_event_handler(struct sock_t* sock, struct option_args_t* args, struct gecko_cmd_packet *evt)
+{
+    bool done = false;
+
+    switch (BGLIB_MSG_ID(evt->header)) {
     case gecko_evt_system_boot_id:
         gecko_cmd_system_set_tx_power(args->dev.txpwr);
         gecko_cmd_le_gap_set_advertise_phy(0, test_phy_1m, test_phy_2m);
@@ -32,6 +40,7 @@ int pair_event_handler(int msgid, struct gecko_cmd_packet *evt, struct option_ar
         break;
 
     case gecko_evt_le_connection_opened_id:
+        done = true;
         printf("connection opened\n");
         break;
 
@@ -50,5 +59,5 @@ int pair_event_handler(int msgid, struct gecko_cmd_packet *evt, struct option_ar
         break;
     }
 
-    return 0;
+    return done;
 }

@@ -1,6 +1,7 @@
 #ifndef SC_HOST_UTIL_H__
 #define SC_HOST_UTIL_H__
 
+#include "debug.h"
 #include <stdio.h>
 #include <stdlib.h>
 

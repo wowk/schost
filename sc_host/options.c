@@ -223,6 +223,7 @@ static int parse_phy(char* s, long* value, const char* name)
     return 0;
 }
 
+#if 0
 static int parse_scan_phy(char* s, long* value, const char* name)
 {
     if(!strcasecmp(s, "1m")){
@@ -242,6 +243,7 @@ static int parse_scan_phy(char* s, long* value, const char* name)
 
     return 0;
 }
+#endif
 
 static int parse_scan_mode(char* s, long* value, const char* name)
 {
@@ -523,7 +525,7 @@ int parse_args(int argc, char** argv, struct option_args_t* args)
                 if(op == 0 && !strcmp("address", options[option_index].name)){
                     parse_macaddr(optarg, (char*)args->set.address, sizeof(args->set.address), "set.address");
                 }else if(op == 0 && !strcmp("name", options[option_index].name)){
-                    strncpy(args->set.name, optarg, strlen(args->set.name));
+                    strncpy((char*)args->set.name, optarg, strlen((char*)args->set.name));
                 }else{
                     sub_opt_index --;
                     continue;
