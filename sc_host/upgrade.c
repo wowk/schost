@@ -17,21 +17,21 @@
 #include "app.h"
 #include "util.h"
 
-static int upgrade_bt_fw(const char* firmware_file)
+static int upgrade_bt_fw(struct sock_t* sock, const char* firmware_file)
 {
     struct stat st;
     if (stat(firmware_file, &st) < 0) {
-        printf("failed to get firmware size: %s\n", strerror(errno));
+        printf_socket(sock, "failed to get firmware size: %s", strerror(errno));
         return -errno;
     }
     int fw_size = (int)st.st_size;
 
     gecko_cmd_dfu_flash_set_address(0);
-    printf("DFU packet size: %d\n", fw_size);
+    printf_socket(sock, "DFU packet size: %d", fw_size);
 
     int fd = open(firmware_file, O_RDONLY);
     if (fd < 0) {
-        printf("failed to open bt firmware: %s\n", strerror(errno));
+        printf_socket(sock, "failed to open bt firmware: %s", strerror(errno));
         return -errno;
     }
 
@@ -44,16 +44,16 @@ static int upgrade_bt_fw(const char* firmware_file)
         left_size -= sizeof(pkt);
         while (0 > (readlen = read(fd, pkt, pkt_size)) && errno == EINTR);
         if (readlen < pkt_size) {
-            printf("failed to read firmware file: %s\n", strerror(errno));
+            printf_socket(sock, "failed to read firmware file: %s", strerror(errno));
             close(fd);
         }
         int reason = gecko_cmd_dfu_flash_upload(pkt_size, pkt)->result;
         if (reason) {
-            printf("failed to upload dfu packet\n");
+            printf_socket(sock, "failed to upload dfu packet");
             close(fd);
             return reason;
         } else {
-            printf("\r%u%%   ", (unsigned)((fw_size - left_size)*100 / fw_size));
+            printf_socket(sock, "\r%u%%   ", (unsigned)((fw_size - left_size)*100 / fw_size));
         }
     }
     close(fd);
@@ -63,11 +63,13 @@ static int upgrade_bt_fw(const char* firmware_file)
 
 int upgrade_cmd_handler(struct sock_t* sock, struct option_args_t* args)
 {
+    gecko_cmd_system_reset(0);
     return 0;
 }
 
 int upgrade_event_handler(struct sock_t* sock, struct option_args_t* args, struct gecko_cmd_packet* evt)
 {
+    int done = 0;
     int result = 0;
     struct gecko_msg_dfu_boot_evt_t* dfu_boot_evt;
 
@@ -75,30 +77,37 @@ int upgrade_event_handler(struct sock_t* sock, struct option_args_t* args, struc
     switch (BGLIB_MSG_ID(evt->header)){
     case gecko_evt_dfu_boot_id:
         dfu_boot_evt = &evt->data.evt_dfu_boot;
-        printf("DFU OK\nBootloader version: %u (0x%x)\n", dfu_boot_evt->version, dfu_boot_evt->version);
-        result = upgrade_bt_fw(args->upgrade.firmware);
+        printf_socket(sock, "DFU OK");
+        printf_socket(sock, "Bootloader version: %u (0x%x)", dfu_boot_evt->version, dfu_boot_evt->version);
+        result = upgrade_bt_fw(sock, args->upgrade.firmware);
         if (result) {
-            printf("failed to upgrade bt chip fw: %s\n", error_summary(result));
+            printf_socket(sock, "failed to upgrade bt chip fw: %s", error_summary(result));
         } else {
-            printf("upgrade bt chip fw successfully\n");
+            printf_socket(sock, "upgrade bt chip fw successfully");
         }
-        printf("Switch to normal mode\n");
-        gecko_cmd_dfu_reset(0);
-        exit(0);
+        printf_socket(sock, "Switch to normal mode");
+        done = 1;
         break;
 
     case gecko_evt_system_boot_id:
         if (access(args->upgrade.firmware, R_OK) < 0) {
-            printf("failed to access bt chip's firmware: %s\n", strerror(errno));
-            exit(-errno);
+            printf_socket(sock, "failed to access bt chip's firmware: %s", strerror(errno));
+        }else{
+            printf_socket(sock, "Switch to DFU mode");
+            gecko_cmd_dfu_reset(1);
         }
-        printf("Switch to DFU mode\n");
-        gecko_cmd_dfu_reset(1);
         break;
 
     default:
         break;
     }
+
+    return done;
+}
+
+int upgrade_cleanup(struct sock_t* sock, struct option_args_t* args)
+{
+    gecko_cmd_system_reset(0);
 
     return 0;
 }

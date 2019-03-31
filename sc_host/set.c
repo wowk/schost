@@ -32,26 +32,21 @@
 
 int set_cmd_handler(struct sock_t* sock, struct option_args_t* args)
 {
-    char msg[128] = "";
-
     if(args->set.address[0] != 0){
         bd_addr addr;
         memcpy(&addr, ether_aton((char*)args->set.address), 6);
         
         struct gecko_msg_system_set_bt_address_rsp_t* result = gecko_cmd_system_set_bt_address(addr);
         if (result->result) {
-            snprintf(msg, sizeof(msg), "Failed to assign BT address: %s",
-                    error_summary(result->result));
+            printf_socket(sock, "Failed to assign BT address: %s", error_summary(result->result));
         } else {
-            snprintf(msg, sizeof(msg), "BT address: %s", args->set.address);
+            printf_socket(sock, "BT address: %s", args->set.address);
         }
-        send_socket(sock, 0, 1, msg, strlen(msg));
     }
 
     if(args->set.name[0] != 0){
         gecko_cmd_system_set_device_name(0, strlen((char*)args->set.name), args->set.name);
-        snprintf(msg, sizeof(msg), "Device Name: %s", args->set.name);
-        send_socket(sock, 0, 1, msg, strlen(msg));
+        printf_socket(sock, "Device Name: %s", args->set.name);
     }
 
     return 0;

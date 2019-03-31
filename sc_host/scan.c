@@ -71,28 +71,19 @@ static void add_neigh_to_list(int phy, struct neigh_list_t* list, struct gecko_m
     }
 }
 
-static void dump_neigh_list(FILE* fp, struct neigh_list_t* list)
+static void dump_neigh_list(struct sock_t* sock, struct neigh_list_t* list)
 {
     int id = 0;
     char address[18] = "";
     struct neigh_entry_t* neigh = NULL;
-    fprintf(fp, "%-5s%-24s%-16s%-6s\n", "ID", "BLE Address", "Address Type", "PHY"); 
-    LIST_FOREACH(neigh, list, entry) {
-        fprintf(fp, "%-5d%-24s%-16d%-6s\n", id++, 
-                scan_mac_to_str((struct ether_addr*)&neigh->address, address),
-                neigh->addrtype, 
-                (neigh->phy_1 && neigh->phy_4) ? "1/4" : (neigh->phy_1 ? "1" : "4"));
-    }
-}
 
-static void save_neigh_list_to_file(struct neigh_list_t* list, const char* file)
-{
-    FILE* fp = fopen(BLE_NEIGHBORS, "w");
-    if(!fp){
-        return;
+    printf_socket(sock, "%-5s%-24s%-16s%-6s", "ID", "BLE Address", "Address Type", "PHY");
+
+    LIST_FOREACH(neigh, list, entry) {
+        printf_socket(sock, "%-5d%-24s%-16d%-6s", id++, 
+                scan_mac_to_str((struct ether_addr*)&neigh->address, address),
+                neigh->addrtype, (neigh->phy_1 && neigh->phy_4) ? "1/4" : (neigh->phy_1 ? "1" : "4"));
     }
-    dump_neigh_list(fp, &neigh_list);
-    fclose(fp);
 }
 
 static void free_neigh_list(struct neigh_list_t* list)
@@ -106,6 +97,7 @@ static void free_neigh_list(struct neigh_list_t* list)
 
 int  scan_cmd_handler(struct sock_t* sock, struct option_args_t* args)
 {
+    gecko_cmd_system_reset(0);
     return 0;
 }
 
@@ -115,7 +107,6 @@ int  scan_event_handler(struct sock_t* sock, struct option_args_t* args, struct 
 
     switch (BGLIB_MSG_ID(evt->header)) {
     case gecko_evt_system_boot_id:
-        remove(BLE_NEIGHBORS);
         LIST_INIT(&neigh_list);
         gecko_cmd_le_gap_set_discovery_timing(1, args->scan.interval, args->scan.winsize);
         gecko_cmd_le_gap_set_discovery_type(1, args->scan.type);
@@ -138,17 +129,14 @@ int  scan_event_handler(struct sock_t* sock, struct option_args_t* args, struct 
 
     case gecko_evt_hardware_soft_timer_id:
         if (scan_time > args->scan.timeout) {
-            dump_neigh_list(stdout, &neigh_list);
-            save_neigh_list_to_file(&neigh_list, BLE_NEIGHBORS);
+            dump_neigh_list(sock, &neigh_list);
             free_neigh_list(&neigh_list);
-            exit(0);
         } else if (scan_time > (args->scan.timeout/2)) {
             gecko_cmd_le_gap_set_discovery_timing(4, args->scan.interval, args->scan.winsize);
             gecko_cmd_le_gap_set_discovery_type(4, args->scan.type);
             gecko_cmd_le_gap_start_discovery(4, args->scan.mode);
         }
         scan_time ++;
-        printf("timeout: %d\n", scan_time);
         break;
 
     default:

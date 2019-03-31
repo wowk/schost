@@ -36,19 +36,19 @@ struct gecko_msg_test_dtm_completed_evt_t* completed_evt = NULL;
 
 int dtm_cmd_handler(struct sock_t* sock, struct option_args_t* args)
 {
+    gecko_cmd_system_reset(0);
     return 0;
 }
 
 static void dtm_tx_init(struct sock_t* sock, const struct option_args_t* args)
 {
-    const char* msg;
     uint8_t  pkttype = args->dtm.tx.pkttype;
     uint32_t pktlen  = args->dtm.tx.pktlen;
     uint8_t  channel = args->dtm.tx.channel;
     uint8_t  phy = args->dtm.tx.phy;
  
-    msg = ">>>>>>>>> start tx test <<<<<<<<<\n\tsend tx command\n";
-    send_socket(sock, 0, 1, msg, strlen(msg));
+    printf_socket(sock, ">>>>>>>>> start tx test <<<<<<<<<");
+    printf_socket(sock, "\tsend tx command");
 
     gecko_cmd_system_set_tx_power(args->dev.txpwr);
     
@@ -62,13 +62,11 @@ static void dtm_tx_init(struct sock_t* sock, const struct option_args_t* args)
 
 static void dtm_rx_init(struct sock_t* sock, const struct option_args_t* args)
 {
-    const char* msg;
-
     uint8_t channel = args->dtm.rx.channel;
     uint8_t phy = args->dtm.rx.phy;
 
-    msg = ">>>>>>>>> start rx test <<<<<<<<<\n\tsend rx command\n";
-    send_socket(sock, 0, 1, msg, strlen(msg));
+    printf_socket(sock, ">>>>>>>>> start rx test <<<<<<<<<");
+    printf_socket(sock, "\tsend rx command");
 
     gecko_cmd_system_set_tx_power(0);
     
@@ -81,8 +79,6 @@ static void dtm_rx_init(struct sock_t* sock, const struct option_args_t* args)
 
 static void dtm_do_action(struct sock_t* sock, struct option_args_t* args, struct gecko_cmd_packet* evt)
 {
-    char msg[128] = "";
-
     if(dtm_state == DTM_TX_INIT){
         dtm_tx_init(sock, args);
         dtm_state = DTM_TX_START;
@@ -95,8 +91,7 @@ static void dtm_do_action(struct sock_t* sock, struct option_args_t* args, struc
         dtm_state = DTM_RX_END;
     }else if(dtm_state == DTM_TX_END){
         completed_evt = &evt->data.evt_test_dtm_completed;
-        snprintf(msg, sizeof(msg), "total %u pkts were sent\n", completed_evt->number_of_packets);
-        send_socket(sock, 0, 1, msg, sizeof(msg));
+        printf_socket(sock, "total %u pkts were sent", completed_evt->number_of_packets);
         args->dtm.tx.on = 0;
         if(args->dtm.rx.on){
             dtm_state = DTM_RX_INIT;
@@ -104,8 +99,7 @@ static void dtm_do_action(struct sock_t* sock, struct option_args_t* args, struc
         }
     }else if(dtm_state == DTM_RX_END){
         completed_evt = &evt->data.evt_test_dtm_completed;
-        snprintf(msg, sizeof(msg), "total %u pkts were received\n", completed_evt->number_of_packets);
-        send_socket(sock, 0, 1, msg, sizeof(msg));
+        printf_socket(sock, "total %u pkts were received", completed_evt->number_of_packets);
         args->dtm.rx.on = 0;
     }
 }
@@ -126,7 +120,7 @@ int dtm_event_handler(struct sock_t* sock, struct option_args_t* args, struct ge
             //dtm_do_action(args, evt);
             endrsptr = gecko_cmd_test_dtm_end();
         }
-        printf("\ttimer's up: %d\n", delay_time);
+        printf_socket(sock, "\ttimer's up: %d", delay_time);
         break;
 
     case gecko_evt_test_dtm_completed_id:
