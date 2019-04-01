@@ -40,7 +40,7 @@ int set_cmd_handler(struct sock_t* sock, struct option_args_t* args)
         if (result->result) {
             printf_socket(sock, "Failed to assign BT address: %s", error_summary(result->result));
         } else {
-            printf_socket(sock, "BT address: %s", args->set.address);
+            printf_socket(sock, "set BT addr successfully");
         }
     }
 
@@ -52,3 +52,9 @@ int set_cmd_handler(struct sock_t* sock, struct option_args_t* args)
     return 0;
 }
 
+int set_cleanup(struct sock_t* sock, struct option_args_t* args)
+{
+    /* after reset, MAC address will be updated */
+    gecko_cmd_system_reset(0);
+    return 0;
+}

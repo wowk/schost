@@ -504,6 +504,9 @@ int parse_args(int argc, char** argv, struct option_args_t* args)
                 if(op == 0 && !strcmp("mode", options[option_index].name)){
                     parse_int(optarg, &value, 0, CHAR_MAX, "pair.mode");
                     args->pair.mode = (uint8_t)value;
+                }else if(op == 0 && !strcmp("txpwr", options[option_index].name)){
+                    parse_float(optarg, &dvalue, 0, 256.0f, "pair.mode");
+                    args->pair.mode = (float)value;
                 }else{
                     sub_opt_index --;
                     continue;

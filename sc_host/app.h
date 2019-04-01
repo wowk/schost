@@ -24,6 +24,7 @@ extern "C" {
 
 int show_cmd_handler(struct sock_t* sock, struct option_args_t* args);
 int set_cmd_handler(struct sock_t* sock, struct option_args_t* args);
+int set_cleanup(struct sock_t* sock, struct option_args_t* args);
 
 int dtm_cmd_handler(struct sock_t* sock, struct option_args_t* args);
 int dtm_event_handler(struct sock_t* sock, struct option_args_t* args, 
@@ -40,6 +41,7 @@ int connect_event_handler(struct sock_t* sock, struct option_args_t* args,
 int pair_cmd_handler(struct sock_t* sock, struct option_args_t* args);
 int pair_event_handler(struct sock_t* sock, struct option_args_t* args, 
                         struct gecko_cmd_packet *evt);
+int pair_cleanup(struct sock_t* sock, struct option_args_t* args);
 
 int upgrade_cmd_handler(struct sock_t* sock, struct option_args_t* args);
 int upgrade_event_handler(struct sock_t* sock, struct option_args_t* args, 

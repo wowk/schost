@@ -108,6 +108,7 @@ int dtm_event_handler(struct sock_t* sock, struct option_args_t* args, struct ge
 {
     switch(BGLIB_MSG_ID(evt->header)){
     case gecko_evt_system_boot_id:
+        delay_time = 0;
         if(args->dtm.tx.on)
             dtm_state = DTM_TX_INIT;
         else

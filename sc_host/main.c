@@ -74,7 +74,8 @@ struct cmd_table_t cmd_tab[] = {
 
     [CMD_SET]     = {
         .signal_shot = true,  
-        .cmd_handler = set_cmd_handler,     
+        .cmd_handler = set_cmd_handler,
+        .cleanup     = set_cleanup,
     },
     
     [CMD_SCAN]    = {
@@ -92,7 +93,8 @@ struct cmd_table_t cmd_tab[] = {
     [CMD_PAIR]    = {
         .signal_shot = false, 
         .cmd_handler = pair_cmd_handler,    
-        .event_handler = pair_event_handler
+        .event_handler = pair_event_handler,
+        .cleanup     = pair_cleanup,
     },
     
     [CMD_CONNECT] = {
@@ -140,16 +142,19 @@ int schost_main(int argc, char* argv[])
 
     char buffer[512] = "";
     while(1){
+        memset(buffer, 0, sizeof(buffer));
         int retlen = recv_socket(sock, 0, 1, buffer, sizeof(buffer));
         if(retlen < 0){
             error(1, errno, "failed to receive response from schostd");
         }else if(retlen == 0){
-            info("all response received");
             break;
         }
 
-        /* output the result received here*/
-        info("received data: %s", buffer);
+        if(buffer[0] == '\r'){
+            printf("%s", buffer);
+        }else{
+            printf("%s\n", buffer);
+        }
     }
 
     close_socket(sock);
@@ -164,7 +169,11 @@ int schostd_main(int argc, char *argv[])
     struct cmd_table_t* cmd_ops = NULL;
     struct option_args_t args;
     struct gecko_cmd_packet *evt = NULL;
-
+    
+    /* in sc_hostd, only dev options are allowed */
+    if(parse_args(argc, argv, &args) < 0){
+        error(1, EINVAL, "failed to start %s", program_invocation_short_name);
+    }
 
     info("Build Time: Date: %s, Time: %s\n", __DATE__, __TIME__);
     memset(&args, 0, sizeof(args));    
@@ -174,6 +183,8 @@ int schostd_main(int argc, char *argv[])
 
     /* Initialise serial communication as non-blocking. */
     args.dev.baudrate = 115200;
+    args.dev.txpwr = 18;
+    strcpy(args.dev.name, "/dev/ttyH0");
     if (app_serial_port_init(&args, 100) < 0) {
         error(1, errno, "Non-blocking serial port init failure");
     }
@@ -222,16 +233,13 @@ int schostd_main(int argc, char *argv[])
         if(FD_ISSET(uart_fd, &rfdset)){
             /* Check for stack event. */
             evt = gecko_peek_event();
-            if ( evt == NULL){
-                continue;
-            }
-            
-            if(!cmd_ops){
-                continue;
-            }
-
-            if(cmd_ops->event_handler(sock, &args, evt)){
+            if (evt && cmd_ops && cmd_ops->event_handler(sock, &args, evt)){
+                if(cmd_ops->cleanup){
+                    cmd_ops->cleanup(sock, &args);
+                    debug(args.debug, "do cleanup");
+                }
                 send_socket(sock, 0, 1, "", 0);
+                cmd_ops = NULL;
             }
         }
         
@@ -241,7 +249,8 @@ int schostd_main(int argc, char *argv[])
                 printf_socket(sock, "failed to execute command: Invalid");
                 continue;
             }
-            
+            debug(args.debug, "get command from client");
+
             if(args.show.on){
                 new_cmd = CMD_SHOW;                    
             }else if(args.set.on){
@@ -260,11 +269,18 @@ int schostd_main(int argc, char *argv[])
                 continue;
             }
             
+            if(cmd_ops && cmd_ops->cleanup){
+                cmd_ops->cleanup(sock, &args);
+            }
+
             if(cmd_tab[new_cmd].signal_shot){
                 cmd_tab[new_cmd].cmd_handler(sock, &args);
+                if(cmd_tab[new_cmd].cleanup)
+                    cmd_tab[new_cmd].cleanup(sock, &args);
                 send_socket(sock, 0, 1, "", 0);
+                cmd_ops = NULL;
                 continue;
-            }else if(cmd != new_cmd){
+            }else{
                 cmd = new_cmd;
                 cmd_ops = &cmd_tab[cmd];
                 if(cmd_ops->cmd_handler(sock, &args)){
@@ -314,24 +330,4 @@ static int app_serial_port_init(const struct option_args_t* args, int32_t timeou
     /* Initialise the serial port with RTS/CTS enabled. */
     return uartOpen((int8_t*)args->dev.name, args->dev.baudrate, args->dev.flowctrl, args->dev.timeout);
 }
-
-#if 0
-static void system_init_action(void)
-{
-    /* BT advertising may affect other functions,
-     * we should stop it after system boot up and
-     * start it when we need it */
-    gecko_cmd_le_gap_stop_advertising(0);
-    sleep(1);
-}
-
-static void load_bt_dev_info(void)
-{
-    struct gecko_msg_flash_ps_load_rsp_t* rsp = gecko_cmd_flash_ps_load(0x4001);
-    echo(0, BLE_VERSION, "Version: %.2X", (uint8_t)rsp->value.data[0]);
-
-    struct gecko_msg_system_get_bt_address_rsp_t* btaddr = gecko_cmd_system_get_bt_address();
-    echo(0, BLE_ADDRESS, "BT address: %s", ether_ntoa((struct ether_addr*)btaddr));
-}
-#endif
 

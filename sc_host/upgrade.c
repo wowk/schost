@@ -53,7 +53,7 @@ static int upgrade_bt_fw(struct sock_t* sock, const char* firmware_file)
             close(fd);
             return reason;
         } else {
-            printf_socket(sock, "\r%u%%   ", (unsigned)((fw_size - left_size)*100 / fw_size));
+            printf_socket(sock, "\rupgrading:   %.2u%%", (unsigned)((fw_size - left_size)*100 / fw_size));
         }
     }
     close(fd);
@@ -64,6 +64,7 @@ static int upgrade_bt_fw(struct sock_t* sock, const char* firmware_file)
 int upgrade_cmd_handler(struct sock_t* sock, struct option_args_t* args)
 {
     gecko_cmd_system_reset(0);
+    printf_socket(sock, "reset system to 1");
     return 0;
 }
 
@@ -72,6 +73,7 @@ int upgrade_event_handler(struct sock_t* sock, struct option_args_t* args, struc
     int done = 0;
     int result = 0;
     struct gecko_msg_dfu_boot_evt_t* dfu_boot_evt;
+    struct gecko_msg_dfu_boot_failure_evt_t* dfu_boot_failure_evt;
 
     /* Handle events */
     switch (BGLIB_MSG_ID(evt->header)){
@@ -90,14 +92,21 @@ int upgrade_event_handler(struct sock_t* sock, struct option_args_t* args, struc
         break;
 
     case gecko_evt_system_boot_id:
+        gecko_cmd_le_gap_stop_advertising(0);
         if (access(args->upgrade.firmware, R_OK) < 0) {
             printf_socket(sock, "failed to access bt chip's firmware: %s", strerror(errno));
+            done = 1;
         }else{
             printf_socket(sock, "Switch to DFU mode");
             gecko_cmd_dfu_reset(1);
         }
         break;
-
+    
+    case gecko_evt_dfu_boot_failure_id:
+        dfu_boot_failure_evt = &evt->data.evt_dfu_boot_failure;
+        printf_socket(sock, "failed to upgrade bt chip fw: %s", error_summary(dfu_boot_failure_evt->reason));
+        done = 1;
+        break;
     default:
         break;
     }
@@ -107,7 +116,8 @@ int upgrade_event_handler(struct sock_t* sock, struct option_args_t* args, struc
 
 int upgrade_cleanup(struct sock_t* sock, struct option_args_t* args)
 {
-    gecko_cmd_system_reset(0);
+    printf_socket(sock, "reset system to 0");
+    gecko_cmd_dfu_reset(0);
 
     return 0;
 }
