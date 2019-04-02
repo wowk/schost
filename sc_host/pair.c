@@ -27,15 +27,16 @@ int pair_cmd_handler(struct sock_t* sock, struct option_args_t* args)
 
 int pair_event_handler(struct sock_t* sock, struct option_args_t* args, struct gecko_cmd_packet *evt)
 {
+    int handle = args->pair.handle;
     int ret = BLE_EVENT_CONTINUE;
 
     switch (BGLIB_MSG_ID(evt->header)) {
     case gecko_evt_system_boot_id:
         gecko_cmd_system_set_tx_power(args->dev.txpwr);
-        gecko_cmd_le_gap_set_advertise_phy(0, test_phy_1m, test_phy_2m);
-        gecko_cmd_le_gap_set_advertise_timing(0, 20, 1000, 100, 0);
-        gecko_cmd_le_gap_set_advertise_tx_power(0, args->pair.txpwr);
-        gecko_cmd_le_gap_start_advertising(0, le_gap_general_discoverable, le_gap_connectable_scannable);
+        gecko_cmd_le_gap_set_advertise_phy(handle, args->pair.primary_phy, args->pair.second_phy);
+        gecko_cmd_le_gap_set_advertise_timing(handle, 20, 1000, 100, 0);
+        gecko_cmd_le_gap_set_advertise_tx_power(handle, args->pair.txpwr);
+        gecko_cmd_le_gap_start_advertising(handle, le_gap_general_discoverable, le_gap_connectable_scannable);
         struct gecko_msg_system_get_bt_address_rsp_t* btaddr = gecko_cmd_system_get_bt_address();
         debug(args->debug, "BT address: %s", ether_ntoa((struct ether_addr*)btaddr));
         printf_socket(sock, "enter pairing mode");
@@ -52,6 +53,7 @@ int pair_event_handler(struct sock_t* sock, struct option_args_t* args, struct g
 
     case gecko_evt_le_connection_closed_id:
         debug(args->debug, "connection closed");
+        gecko_cmd_le_gap_start_advertising(handle, le_gap_general_discoverable, le_gap_connectable_scannable);
         break;
 
     default:

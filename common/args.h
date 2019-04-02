@@ -32,6 +32,9 @@ struct option_args_t {
     } connect;
 
     struct {
+        uint8_t handle;
+        uint8_t primary_phy;
+        uint8_t second_phy;
         uint8_t on;
         uint8_t mode;
 	    float txpwr;

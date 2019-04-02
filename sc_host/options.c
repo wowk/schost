@@ -69,6 +69,10 @@ static struct option options[] = {
     /* enter pair mode */
     {"pair",            no_argument,        0, 0},
         {"mode",        required_argument,  0, 0},
+        {"txpwr",       required_argument,  0, 0},
+        {"handle",      required_argument,  0, 0},
+        {"pphy",        required_argument,  0, 0},
+        {"sphy",        required_argument,  0, 0},
 
     /* scan sub options */
     {"scan",            no_argument,        0, 0},
@@ -278,6 +282,40 @@ static int parse_init_phy(char* s, long* value, const char* name)
     return 0;
 }
 
+static int parse_primary_phy(char* s, long* value, const char* name)
+{
+    if(!strcasecmp(s, "1m")){
+        *value = le_gap_phy_1m;
+    }else if(!strcasecmp(s, "coded")){
+        *value = le_gap_phy_coded;
+    }else{
+        parse_int(s, value, 1, 4, name);
+        if(*value == 3 || *value == 2){
+            error(errno, errno, "failed to parse <%s>", name);
+        }
+    }
+
+    return 0;
+}
+
+static int parse_second_phy(char* s, long* value, const char* name)
+{
+    if(!strcasecmp(s, "1m")){
+        *value = le_gap_phy_1m;
+    }else if(!strcasecmp(s, "2m")){
+        *value = le_gap_phy_2m;
+    }else if(!strcasecmp(s, "coded")){
+        *value = le_gap_phy_coded;
+    }else{
+        parse_int(s, value, 1, 4, name);
+        if(*value == 3){
+            error(errno, errno, "failed to parse <%s>", name);
+        }
+    }
+
+    return 0;
+}
+
 static int parse_macaddr(char* s, char* buf, size_t buflen, const char* name)
 {
     if(buflen < 18){
@@ -436,6 +474,12 @@ int parse_args(int argc, char** argv, struct option_args_t* args)
     args->dtm.tx.pwr    = 80.0f;
     args->dtm.rx.phy    = test_phy_1m;
     args->dtm.tx.pkttype = test_pkt_prbs9;
+    
+    args->pair.handle   = 0;
+    args->pair.primary_phy = le_gap_phy_1m;
+    args->pair.second_phy  = le_gap_phy_1m;
+    args->pair.txpwr       = 80.f;
+    args->pair.mode        = 0;
 
     int sub_opt_index = 0;
     enum sub_option_e sub_opt_status[16];
@@ -505,8 +549,17 @@ int parse_args(int argc, char** argv, struct option_args_t* args)
                     parse_int(optarg, &value, 0, CHAR_MAX, "pair.mode");
                     args->pair.mode = (uint8_t)value;
                 }else if(op == 0 && !strcmp("txpwr", options[option_index].name)){
-                    parse_float(optarg, &dvalue, 0, 256.0f, "pair.mode");
-                    args->pair.mode = (float)value;
+                    parse_float(optarg, &dvalue, 0, 256.0f, "pair.txpwr");
+                    args->pair.txpwr = (float)value;
+                }else if(op == 0 && !strcmp("handle", options[option_index].name)){
+                    parse_int(optarg, &value, 0, CHAR_MAX, "pair.handle");
+                    args->pair.mode = (uint8_t)value;
+                }else if(op == 0 && !strcmp("sphy", options[option_index].name)){
+                    parse_second_phy(optarg, &value, "pair.sphy");
+                    args->pair.second_phy = (uint8_t)value;
+                }else if(op == 0 && !strcmp("pphy", options[option_index].name)){
+                    parse_primary_phy(optarg, &value, "pair.pphy");
+                    args->pair.primary_phy = (uint8_t)value;
                 }else{
                     sub_opt_index --;
                     continue;
