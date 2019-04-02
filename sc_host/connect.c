@@ -7,6 +7,7 @@
 #include <netinet/ether.h>
 #include "host_gecko.h"
 #include "util.h"
+#include "app.h"
 #include "args.h"
 #include "sock.h"
 
@@ -23,12 +24,13 @@ static struct gecko_msg_le_gap_connect_rsp_t* connrsptr = NULL;
 int connect_cmd_handler(struct sock_t* sock, struct option_args_t* args)
 {
     gecko_cmd_system_reset(0);
-    return 0;
+
+    return BLE_EVENT_CONTINUE;
 }
 
 int connect_event_handler(struct sock_t* sock, struct option_args_t* args, struct gecko_cmd_packet *evt)
 {
-    int done = 0;
+    int ret = BLE_EVENT_CONTINUE;
 
     bd_addr addr;
     struct gecko_msg_le_connection_opened_evt_t* opened_evt;
@@ -48,7 +50,7 @@ int connect_event_handler(struct sock_t* sock, struct option_args_t* args, struc
         conn_tab[opened_evt->connection].used = true;
         conn_tab[opened_evt->connection].handle = opened_evt->connection;
         printf_socket(sock, "connected: %u", connrsptr->connection);
-        done = 1;
+        ret = BLE_EVENT_RETURN;
         break;
 
     case gecko_evt_le_connection_parameters_id:
@@ -77,5 +79,5 @@ int connect_event_handler(struct sock_t* sock, struct option_args_t* args, struc
         break;
     }
 
-    return done;
+    return ret;
 }

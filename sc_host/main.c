@@ -81,7 +81,8 @@ struct cmd_table_t cmd_tab[] = {
     [CMD_SCAN]    = {
         .signal_shot = false, 
         .cmd_handler = scan_cmd_handler,    
-        .event_handler = scan_event_handler
+        .event_handler = scan_event_handler,
+        .cleanup     = scan_cleanup,
     },
 
     [CMD_DTM]     = {
@@ -233,13 +234,24 @@ int schostd_main(int argc, char *argv[])
         if(FD_ISSET(uart_fd, &rfdset)){
             /* Check for stack event. */
             evt = gecko_peek_event();
-            if (evt && cmd_ops && cmd_ops->event_handler(sock, &args, evt)){
-                if(cmd_ops->cleanup){
-                    cmd_ops->cleanup(sock, &args);
-                    debug(args.debug, "do cleanup");
+            if (evt && cmd_ops){
+                int ret = cmd_ops->event_handler(sock, &args, evt);
+                switch(ret){
+                case BLE_EVENT_RETURN:
+                    send_socket(sock, 0, 1, "", 0);
+                    break;
+
+                case BLE_EVENT_STOP:
+                    send_socket(sock, 0, 1, "", 0);
+                    if(cmd_ops->cleanup){
+                        cmd_ops->cleanup(sock, &args);
+                    }
+                    cmd_ops = NULL;
+                    break;
+
+                default:
+                    break;
                 }
-                send_socket(sock, 0, 1, "", 0);
-                cmd_ops = NULL;
             }
         }
         
@@ -266,24 +278,26 @@ int schostd_main(int argc, char *argv[])
             }else if(args.scan.on){
                 new_cmd = CMD_SCAN;
             }else{
+                printf_socket(sock, "no handler setup for this command");
+                send_socket(sock, 0, 1, "", 0);
                 continue;
             }
-            
-            if(cmd_ops && cmd_ops->cleanup){
-                cmd_ops->cleanup(sock, &args);
-            }
-
+           
             if(cmd_tab[new_cmd].signal_shot){
                 cmd_tab[new_cmd].cmd_handler(sock, &args);
                 if(cmd_tab[new_cmd].cleanup)
                     cmd_tab[new_cmd].cleanup(sock, &args);
                 send_socket(sock, 0, 1, "", 0);
-                cmd_ops = NULL;
-                continue;
             }else{
+                if(cmd_ops && cmd_ops->cleanup){
+                    cmd_ops->cleanup(sock, &args);
+                }
                 cmd = new_cmd;
                 cmd_ops = &cmd_tab[cmd];
-                if(cmd_ops->cmd_handler(sock, &args)){
+                if(cmd_ops->cmd_handler(sock, &args) == BLE_EVENT_STOP){
+                    if(cmd_ops->cleanup){
+                        cmd_ops->cleanup(sock, &args);
+                    }
                     cmd_ops = NULL;
                 }
             }

@@ -97,18 +97,20 @@ static void free_neigh_list(struct neigh_list_t* list)
 
 int  scan_cmd_handler(struct sock_t* sock, struct option_args_t* args)
 {
-    debug(args->debug, "starting scan neighbor devices");
     gecko_cmd_system_reset(0);
-    return 0;
+    debug(args->debug, "starting scan neighbor devices");
+
+    return BLE_EVENT_CONTINUE;
 }
 
 int  scan_event_handler(struct sock_t* sock, struct option_args_t* args, struct gecko_cmd_packet* evt)
 {
-    int done = 0;
+    int ret = BLE_EVENT_CONTINUE;
     struct gecko_msg_le_gap_scan_response_evt_t* scanrsptr = NULL;
 
     switch (BGLIB_MSG_ID(evt->header)) {
     case gecko_evt_system_boot_id:
+        debug(args->debug, "system boot\n");
         scan_time = 0;
         LIST_INIT(&neigh_list);
         gecko_cmd_le_gap_set_discovery_timing(1, args->scan.interval, args->scan.winsize);
@@ -135,7 +137,7 @@ int  scan_event_handler(struct sock_t* sock, struct option_args_t* args, struct 
             debug(args->debug, "timeout<1>: %d", scan_time);
             dump_neigh_list(sock, &neigh_list);
             free_neigh_list(&neigh_list);
-            done = 1;
+            ret = BLE_EVENT_STOP;
         } else if (scan_time > (args->scan.timeout/2)) {
             debug(args->debug, "timeout<4>: %d", scan_time);
             gecko_cmd_le_gap_set_discovery_timing(4, args->scan.interval, args->scan.winsize);
@@ -151,5 +153,11 @@ int  scan_event_handler(struct sock_t* sock, struct option_args_t* args, struct 
         break;
     }
 
-    return done;
+    return ret;
+}
+
+int scan_cleanup(struct sock_t* sock, struct option_args_t* args)
+{
+    gecko_cmd_le_gap_end_procedure();
+    return 0;
 }

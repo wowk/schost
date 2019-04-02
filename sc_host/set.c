@@ -49,7 +49,7 @@ int set_cmd_handler(struct sock_t* sock, struct option_args_t* args)
         printf_socket(sock, "Device Name: %s", args->set.name);
     }
 
-    return 0;
+    return BLE_EVENT_STOP;
 }
 
 int set_cleanup(struct sock_t* sock, struct option_args_t* args)

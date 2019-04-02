@@ -16,6 +16,12 @@
 #include "args.h"
 #include "sock.h"
 
+enum {
+    BLE_EVENT_STOP,
+    BLE_EVENT_CONTINUE,
+    BLE_EVENT_RETURN,
+};
+
 struct gecko_cmd_packet;
 
 #ifdef __cplusplus
@@ -33,6 +39,7 @@ int dtm_event_handler(struct sock_t* sock, struct option_args_t* args,
 int scan_cmd_handler(struct sock_t* sock, struct option_args_t* args);
 int scan_event_handler(struct sock_t* sock, struct option_args_t* args, 
                         struct gecko_cmd_packet *evt);
+int scan_cleanup(struct sock_t* sock, struct option_args_t* args);
 
 int connect_cmd_handler(struct sock_t* sock, struct option_args_t* args);
 int connect_event_handler(struct sock_t* sock, struct option_args_t* args, 

@@ -37,7 +37,8 @@ struct gecko_msg_test_dtm_completed_evt_t* completed_evt = NULL;
 int dtm_cmd_handler(struct sock_t* sock, struct option_args_t* args)
 {
     gecko_cmd_system_reset(0);
-    return 0;
+
+    return BLE_EVENT_CONTINUE;
 }
 
 static void dtm_tx_init(struct sock_t* sock, const struct option_args_t* args)
@@ -106,6 +107,8 @@ static void dtm_do_action(struct sock_t* sock, struct option_args_t* args, struc
 
 int dtm_event_handler(struct sock_t* sock, struct option_args_t* args, struct gecko_cmd_packet *evt)
 {
+    int ret = BLE_EVENT_CONTINUE;
+
     switch(BGLIB_MSG_ID(evt->header)){
     case gecko_evt_system_boot_id:
         delay_time = 0;
@@ -132,5 +135,9 @@ int dtm_event_handler(struct sock_t* sock, struct option_args_t* args, struct ge
         break;
     }
     
-    return (args->dtm.tx.on == 0 && args->dtm.rx.on == 0);
+    if(args->dtm.tx.on == 0 && args->dtm.rx.on == 0){
+        ret = BLE_EVENT_STOP;
+    }
+
+    return ret;
 }

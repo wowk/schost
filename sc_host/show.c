@@ -33,5 +33,5 @@ int show_cmd_handler(struct sock_t* sock, struct option_args_t* args)
         printf_socket(sock, "BT address: %s", ether_ntoa((struct ether_addr*)get_bt_rsp));
     }
 
-    return 0;
+    return BLE_EVENT_STOP;
 }

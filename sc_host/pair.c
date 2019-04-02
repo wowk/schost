@@ -22,12 +22,12 @@
 int pair_cmd_handler(struct sock_t* sock, struct option_args_t* args)
 {
     gecko_cmd_system_reset(0);
-    return 0;
+    return BLE_EVENT_CONTINUE;
 }
 
 int pair_event_handler(struct sock_t* sock, struct option_args_t* args, struct gecko_cmd_packet *evt)
 {
-    int done = 0;
+    int ret = BLE_EVENT_CONTINUE;
 
     switch (BGLIB_MSG_ID(evt->header)) {
     case gecko_evt_system_boot_id:
@@ -39,7 +39,7 @@ int pair_event_handler(struct sock_t* sock, struct option_args_t* args, struct g
         struct gecko_msg_system_get_bt_address_rsp_t* btaddr = gecko_cmd_system_get_bt_address();
         debug(args->debug, "BT address: %s", ether_ntoa((struct ether_addr*)btaddr));
         printf_socket(sock, "enter pairing mode");
-        done = 1;
+        ret = BLE_EVENT_RETURN;
         break;
 
     case gecko_evt_le_connection_opened_id:
@@ -58,10 +58,12 @@ int pair_event_handler(struct sock_t* sock, struct option_args_t* args, struct g
         break;
     }
 
-    return done;
+    return ret;
 }
 
 int pair_cleanup(struct sock_t* sock, struct option_args_t* args)
 {
+    gecko_cmd_le_gap_stop_advertising(0);
+
     return 0;
 }
