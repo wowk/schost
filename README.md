@@ -1,1 +1,1 @@
-# schost
+# silicon labs BLE host tool
