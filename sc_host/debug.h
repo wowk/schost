@@ -21,7 +21,9 @@
     fprintf(stderr, "\033[1;31m");\
     fprintf(stderr, "[ error ] [ %-.16s : %-5d] ", __FUNCTION__, __LINE__-1);\
     fprintf(stderr, fmt, ##args);\
-    fprintf(stderr, "  : %s\n", strerror(errcode));\
+    if(errcode){\
+        fprintf(stderr, "  : %s\n", strerror(errcode));\
+    }\
     fprintf(stderr, "\033[1;0m");\
     fflush(stderr);\
     if( need_exit )\

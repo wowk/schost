@@ -1,3 +1,4 @@
+#include "debug.h"
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -6,16 +7,6 @@
 #include <errno.h>
 #include <unistd.h>
 
-#define debug(fmt, ...) do{\
-    printf("[%s:%u] ", __FUNCTION__, __LINE__);\
-    printf(fmt, ##__VA_ARGS__);\
-    if(errno){\
-        printf(": %s\n", strerror(errno));\
-    }else{\
-        printf("\n");\
-    }\
-    fflush(stdout);\
-}while(0)
 
 void echo(int append, const char* file, const char* format, ...)
 {
@@ -24,7 +15,7 @@ void echo(int append, const char* file, const char* format, ...)
     }
     FILE* fp = fopen(file, append ? "a" : "w");
     if (!fp) {
-        debug("failed to open file <%s>", file);
+        error(0, errno, "failed to open file <%s>", file);
         return;
     }
     va_list val;
@@ -39,7 +30,7 @@ size_t cat(const char* file, char** pdata, size_t len)
     *pdata = NULL;
     FILE* fp = fopen(file, "r");
     if (!fp) {
-        debug("failed to open file <%s>", file);
+        error(0, errno, "failed to open file <%s>", file);
         goto error;
     }
     if (len == 0) {
@@ -47,13 +38,13 @@ size_t cat(const char* file, char** pdata, size_t len)
         len = ftell(fp);
         fseek(fp, 0, SEEK_SET);
         if (len < 0) {
-            debug("failed to get file <%s> size", file);
+            error(0, errno, "failed to get file <%s> size", file);
             goto error;
         }
     }
     *pdata = (char*)calloc(1, len+1);
     if (!(*pdata)) {
-        debug("failed to malloc");
+        error(0, errno, "failed to malloc");
         goto error;
     }
     len = fread(*pdata, 1, len, fp);
@@ -126,6 +117,8 @@ const char* error_summary(int result)
         errptr = "unknown error";
         break;
     }
+
+    error(0, 0, "error code: 0x%.4x,  %s", result, errptr);
 
     return errptr;
 }

@@ -99,7 +99,7 @@ static struct option options[] = {
         {"flowctrl",    required_argument,  0, 0},
         {"baudrate",    required_argument,  0, 0},
         {"timeout",     required_argument,  0, 0},
-        {"txpwr",        required_argument,  0, 0},
+        {"txpwr",       required_argument,  0, 0},
     
     /* end */
     {0, 0, 0, 0},
@@ -336,6 +336,7 @@ void print_args(const struct option_args_t* args)
         printf("\t%-16s: %.8x\n",   "flowctrl", args->dev.flowctrl);
         printf("\t%-16s: %u\n",     "baudrate", args->dev.baudrate);
         printf("\t%-16s: %u\n",     "timeout",  args->dev.timeout);
+        printf("\t%-16s: %f\n",     "txpwr",    args->dev.txpwr);
     }
 
     if(args->show.on){
@@ -355,6 +356,7 @@ void print_args(const struct option_args_t* args)
         printf("\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\nscan:\n");
         printf("\t%-16s: %u\n",     "mode",     args->scan.mode);
         printf("\t%-16s: %u\n",     "type",     args->scan.type);
+        printf("\t%-16s: %u\n",     "phy",      args->scan.phy);
         printf("\t%-16s: %u\n",     "timeout",  args->scan.timeout);
         printf("\t%-16s: %u\n",     "winsize",  args->scan.winsize);
         printf("\t%-16s: %u\n",     "interval", args->scan.interval);
@@ -371,7 +373,11 @@ void print_args(const struct option_args_t* args)
 
     if(args->pair.on){
         printf("\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\npair:\n");
-        printf("\t%-16s: %u\n",     "mode", args->pair.mode);
+        printf("\t%-16s: %u\n",     "mode",   args->pair.mode);
+        printf("\t%-16s: %f\n",     "txpwr",  args->pair.txpwr);
+        printf("\t%-16s: %u\n",     "handle", args->pair.handle);
+        printf("\t%-16s: %u\n",     "pphy",   args->pair.primary_phy);
+        printf("\t%-16s: %u\n",     "sphy",   args->pair.second_phy);
     }
 
     if(args->upgrade.on){
@@ -417,6 +423,7 @@ void usage(const char* app_name)
            "\t       [ --interval ]                                        : set scan interval\n"
            "\t       [ --winsize  ]                                        : set scan window size\n"
            "\t       [ --type     ]                                        : set scan type\n"
+           "\t       [ --phy      ]                                        : set scan phy\n"
            "\t       [ --mode     ]                                        : set scan mode\n"
            "\t       [ --timeout  ]                                        : set scan timeout\n\n"
            "\t[ --connect ]                                                : connect device\n"
@@ -440,7 +447,11 @@ void usage(const char* app_name)
            "\t                [ --delay   | -d ]                           : rx test time\n"
            "\t                [ --showpkt | -s ]                           : show packet in hex format\n\n"
            "\t[ --pair  ]                                                  : pair new device\n"
-           "\t       [ --mode     ]                                        : pairing mode\n\n"
+           "\t       [ --mode     ]                                        : pairing mode\n"
+           "\t       [ --handle   ]                                        : handle set\n"
+           "\t       [ --txpwr    ]                                        : advertise tx power\n"
+           "\t       [ --pphy     ]                                        : set primary phy\n"
+           "\t       [ --sphy     ]                                        : set secondary phy\n\n"
            "\t[ --dev   ]                                                  : Config uart\n"
            "\t       [ --baudrate ]                                        : set baudrate\n"
            "\t       [ --flowctrl ]                                        : set flowctrl bits\n"
@@ -486,7 +497,7 @@ int parse_args(int argc, char** argv, struct option_args_t* args)
     args->scan.winsize     = 160;
     args->scan.timeout     = 10;
     args->scan.phy         = le_gap_phy_1m;
-
+    
     int sub_opt_index = 0;
     enum sub_option_e sub_opt_status[16];
     sub_opt_status[0] = OPT_ALL;
@@ -559,7 +570,7 @@ int parse_args(int argc, char** argv, struct option_args_t* args)
                     args->pair.txpwr = (float)value;
                 }else if(op == 0 && !strcmp("handle", options[option_index].name)){
                     parse_int(optarg, &value, 0, CHAR_MAX, "pair.handle");
-                    args->pair.mode = (uint8_t)value;
+                    args->pair.handle = (uint8_t)value;
                 }else if(op == 0 && !strcmp("sphy", options[option_index].name)){
                     parse_second_phy(optarg, &value, "pair.sphy");
                     args->pair.second_phy = (uint8_t)value;
