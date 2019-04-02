@@ -16,6 +16,7 @@ struct option_args_t {
     struct {
         uint8_t on;
         uint8_t mode;
+        uint8_t phy;
         uint8_t type;
         uint32_t timeout;
         uint32_t winsize;

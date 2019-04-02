@@ -110,43 +110,32 @@ int  scan_event_handler(struct sock_t* sock, struct option_args_t* args, struct 
 
     switch (BGLIB_MSG_ID(evt->header)) {
     case gecko_evt_system_boot_id:
-        debug(args->debug, "system boot\n");
-        scan_time = 0;
+        scan_time = args->scan.timeout;
         LIST_INIT(&neigh_list);
-        gecko_cmd_le_gap_set_discovery_timing(1, args->scan.interval, args->scan.winsize);
-        gecko_cmd_le_gap_set_discovery_type(1, args->scan.type);
-        gecko_cmd_le_gap_start_discovery(1, args->scan.mode);
+        gecko_cmd_le_gap_set_discovery_timing(args->scan.phy, args->scan.interval, args->scan.winsize);
+        gecko_cmd_le_gap_set_discovery_type(args->scan.phy, args->scan.type);
+        gecko_cmd_le_gap_start_discovery(args->scan.phy, args->scan.mode);
         gecko_cmd_hardware_set_soft_timer(32768,0,0);
         break;
 
     case gecko_evt_le_gap_scan_response_id:
         scanrsptr = &evt->data.evt_le_gap_scan_response;
-        
-        if (scan_time < (args->scan.timeout/2)) {
-            add_neigh_to_list(1, &neigh_list, scanrsptr); 
-        } else {
-            add_neigh_to_list(4, &neigh_list, scanrsptr);            
-        }
+        add_neigh_to_list(args->scan.phy, &neigh_list, scanrsptr); 
         break;
 
     case gecko_evt_le_gap_scan_request_id:
         break;
 
     case gecko_evt_hardware_soft_timer_id:
-        if (scan_time > args->scan.timeout) {
+        if (scan_time == 0) {
             debug(args->debug, "timeout<1>: %d", scan_time);
             dump_neigh_list(sock, &neigh_list);
             free_neigh_list(&neigh_list);
             ret = BLE_EVENT_STOP;
-        } else if (scan_time > (args->scan.timeout/2)) {
-            debug(args->debug, "timeout<4>: %d", scan_time);
-            gecko_cmd_le_gap_set_discovery_timing(4, args->scan.interval, args->scan.winsize);
-            gecko_cmd_le_gap_set_discovery_type(4, args->scan.type);
-            gecko_cmd_le_gap_start_discovery(4, args->scan.mode);
         }else{
             debug(args->debug, "timeout<4>: %d", scan_time);
         }
-        scan_time ++;
+        scan_time --;
         break;
 
     default:

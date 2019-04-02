@@ -76,6 +76,7 @@ static struct option options[] = {
 
     /* scan sub options */
     {"scan",            no_argument,        0, 0},
+        {"phy",         required_argument,  0, 0},
         {"mode",        required_argument,  0, 0},
         {"interval",    required_argument,  0, 0},
         {"winsize",     required_argument,  0, 0},
@@ -227,7 +228,6 @@ static int parse_phy(char* s, long* value, const char* name)
     return 0;
 }
 
-#if 0
 static int parse_scan_phy(char* s, long* value, const char* name)
 {
     if(!strcasecmp(s, "1m")){
@@ -247,7 +247,6 @@ static int parse_scan_phy(char* s, long* value, const char* name)
 
     return 0;
 }
-#endif
 
 static int parse_scan_mode(char* s, long* value, const char* name)
 {
@@ -481,6 +480,13 @@ int parse_args(int argc, char** argv, struct option_args_t* args)
     args->pair.txpwr       = 80.f;
     args->pair.mode        = 0;
 
+    args->scan.type        = 1;
+    args->scan.mode        = le_gap_discover_observation;
+    args->scan.interval    = 160;
+    args->scan.winsize     = 160;
+    args->scan.timeout     = 10;
+    args->scan.phy         = le_gap_phy_1m;
+
     int sub_opt_index = 0;
     enum sub_option_e sub_opt_status[16];
     sub_opt_status[0] = OPT_ALL;
@@ -674,6 +680,9 @@ int parse_args(int argc, char** argv, struct option_args_t* args)
                 } else if ( op == 0 && !strcmp("winsize", options[option_index].name) ) {
                     parse_int(optarg, &value, 0, INT_MAX, "scan.winsize");
                     args->scan.winsize = (uint32_t)value;
+                } else if ( op == 0 && !strcmp("phy", options[option_index].name) ) {
+                    parse_scan_phy(optarg, &value, "scan.phy");
+                    args->scan.phy = (uint8_t)value;
                 } else if ( op == 0 && !strcmp("type", options[option_index].name) ) {
                     parse_int(optarg, &value, 0, 1, "scan.type");
                     args->scan.type = (uint32_t)value;
