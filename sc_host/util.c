@@ -6,7 +6,36 @@
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
+#include <netinet/ether.h>
 
+
+#define swap(a, b) do{\
+    typeof(a) tmp = b;\
+    b = a;\
+    a = tmp;\
+}while(0)
+
+char* btaddr2str(void* addr,  char* buf)
+{
+    uint8_t* p =(uint8_t*)addr;
+    const char* fmt = "%.2x:%.2x:%.2x:%.2x:%.2x:%.2x";
+
+    sprintf(buf, fmt, p[5], p[4], p[3], p[2], p[1], p[0]);
+
+    return buf;
+}
+
+void* str2btaddr(char* str, void* buf)
+{
+    uint8_t* p = (uint8_t*)buf;
+
+    ether_aton_r(str, (struct ether_addr*)buf);
+    swap(p[5], p[0]);
+    swap(p[4], p[1]);
+    swap(p[3], p[2]);
+    
+    return buf;
+}
 
 void echo(int append, const char* file, const char* format, ...)
 {
@@ -118,7 +147,29 @@ const char* error_summary(int result)
         break;
     }
 
-    error(0, 0, "error code: 0x%.4x,  %s", result, errptr);
-
     return errptr;
+}
+
+int process_running(const char* pidfile)
+{
+    if(access(pidfile, F_OK) < 0){
+        return 0;
+    }
+    
+    char* pid = NULL;
+    cat(pidfile, &pid, sizeof(pid));
+    if(!pid){
+        return 1;
+    }
+
+    char cmdline[64] = "";
+    sprintf(cmdline, "/proc/%s/cmdline", pid);
+    free(pid);
+
+    if(access(cmdline, F_OK) < 0){
+        echo(0, pidfile, "%d", (int)getpid());
+        return 0;
+    }
+    
+    return 1;
 }

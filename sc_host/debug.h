@@ -2,6 +2,7 @@
 #define DEBUG_H__
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 
@@ -18,36 +19,48 @@
 #endif
 
 #define error(need_exit, errcode, fmt, args...)  do{\
+    flockfile(stderr);\
     fprintf(stderr, "\033[1;31m");\
-    fprintf(stderr, "[ error ] [ %-.16s : %-5d] ", __FUNCTION__, __LINE__-1);\
+    fprintf(stderr, "[ %-.8s ] [ error ] [ %-.16s : %-5d] ", \
+            program_invocation_short_name,\
+            __FUNCTION__, __LINE__-1);\
     fprintf(stderr, fmt, ##args);\
     if(errcode){\
-        fprintf(stderr, "  : %s\n", strerror(errcode));\
+        fprintf(stderr, "  : %s", strerror(errcode));\
     }\
-    fprintf(stderr, "\033[1;0m");\
+    fprintf(stderr, "\n\033[1;0m");\
     fflush(stderr);\
     if( need_exit )\
         exit(errcode);\
-    }while(0)
+    funlockfile(stderr);\
+}while(0)
 
 #define debug(onoff, fmt, args...)do{\
     if(onoff){\
+        flockfile(stdout);\
         fprintf(stdout, "\033[1;32m");\
-        fprintf(stdout, "[ debug ] [ %-.16s : %-5d] ", __FUNCTION__, __LINE__);\
+        fprintf(stdout, "[ %-.8s ] [ debug ] [ %-.16s : %-5d] ", \
+            program_invocation_short_name,\
+            __FUNCTION__, __LINE__);\
         fprintf(stdout, fmt, ##args);\
         fprintf(stdout, "\033[1;0m");\
         fprintf(stdout, "\n");\
         fflush(stdout);\
+        funlockfile(stdout);\
     }\
     }while(0)
 
 #define info(fmt, args...)do{\
-    fprintf(stdout, "\033[1;34m");\
-    fprintf(stdout, "[ info ] [ %-.16s : %-5d] ", __FUNCTION__, __LINE__);\
+    flockfile(stdout);\
+    fprintf(stderr, "\033[1;34m");\
+    fprintf(stdout, "[ %-.8s ] [ info  ] [ %-.16s : %-5d] ", \
+            program_invocation_short_name,\
+            __FUNCTION__, __LINE__);\
     fprintf(stdout, fmt, ##args);\
     fprintf(stdout, "\033[1;0m");\
     fprintf(stdout, "\n");\
     fflush(stdout);\
-    }while(0)
+    funlockfile(stdout);\
+}while(0)
 
 #endif

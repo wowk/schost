@@ -10,26 +10,7 @@
 #include <getopt.h>
 #include <netinet/ether.h>
 #include "host_gecko.h"
-
- /** The default serial port to use for BGAPI communication. */
-#if ((_WIN32 == 1) || (__CYGWIN__ == 1))
-static char *default_uart_port = "COM0";
-#elif __APPLE__ == 1
-static char *default_uart_port = "/dev/tty.usbmodem14171";
-#elif __linux == 1
-static char *default_uart_port = "/dev/ttyH0";
-#else
-static char *default_uart_port = "";
-#endif
-
-/** The default baud rate to use. */
-static uint32_t default_baud_rate = 115200;
-
-// /** The serial port to use for BGAPI communication. */
-// static char *uart_port = NULL;
-
-// /** The baud rate to use. */
-// static uint32_t baud_rate = 0;
+#include "options.h"
 
 
 static struct option options[] = {
@@ -73,6 +54,7 @@ static struct option options[] = {
         {"handle",      required_argument,  0, 0},
         {"pphy",        required_argument,  0, 0},
         {"sphy",        required_argument,  0, 0},
+        {"off",         required_argument,  0, 0},
 
     /* scan sub options */
     {"scan",            no_argument,        0, 0},
@@ -82,9 +64,12 @@ static struct option options[] = {
         {"winsize",     required_argument,  0, 0},
         {"type",        required_argument,  0, 0},
         {"timeout",     required_argument,  0, 0},
+        {"off",         required_argument,  0, 0},
 
     /* connect sub options */
     {"connect",         no_argument,        0, 0},
+        {"list",        no_argument,        0, 0},
+        {"disconn",     required_argument,  0, 0},
         {"address",     required_argument,  0, 0},
         {"addrtype",    required_argument,  0, 0},
         {"initphy",     required_argument,  0, 0},
@@ -104,20 +89,6 @@ static struct option options[] = {
     /* end */
     {0, 0, 0, 0},
 };
-
-enum sub_option_e {
-    OPT_ALL,
-        OPT_DTM,
-            OPT_TX,
-            OPT_RX, 
-        OPT_DEV,
-        OPT_SCAN,
-        OPT_CONNECT,
-        OPT_SHOW,
-        OPT_SET,
-        OPT_PAIR,
-        OPT_UPGRADE,
-} sub_opt_status;
 
 static int parse_int(char* s, long* value, long min, long max, const char* name)
 {
@@ -330,62 +301,56 @@ static int parse_macaddr(char* s, char* buf, size_t buflen, const char* name)
 
 void print_args(const struct option_args_t* args)
 {
-    if(args->dev.on){
+    switch(args->option){
+    case OPT_DEV:
         printf(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\ndev:\n");
         printf("\t%-16s: %s\n",     "name",     args->dev.name);
         printf("\t%-16s: %.8x\n",   "flowctrl", args->dev.flowctrl);
         printf("\t%-16s: %u\n",     "baudrate", args->dev.baudrate);
         printf("\t%-16s: %u\n",     "timeout",  args->dev.timeout);
-        printf("\t%-16s: %f\n",     "txpwr",    args->dev.txpwr);
-    }
+        break;
 
-    if(args->show.on){
+    case OPT_SHOW:
         printf("\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\nshow:\n");
         printf("\t%-16s: %u\n",     "version",  args->show.version);
         printf("\t%-16s: %u\n",     "address",  args->show.btaddr);
+        break;
 
-    }
-
-    if(args->set.on){
+    case OPT_SET:
         printf("\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\nset:\n");
         printf("\t%-16s: %s\n",     "address",  args->set.address);
         printf("\t%-16s: %s\n",     "name",     args->set.name);
-    }
+        break;
 
-    if(args->scan.on){
+    case OPT_SCAN:
         printf("\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\nscan:\n");
         printf("\t%-16s: %u\n",     "mode",     args->scan.mode);
         printf("\t%-16s: %u\n",     "type",     args->scan.type);
-        printf("\t%-16s: %u\n",     "phy",      args->scan.phy);
         printf("\t%-16s: %u\n",     "timeout",  args->scan.timeout);
         printf("\t%-16s: %u\n",     "winsize",  args->scan.winsize);
         printf("\t%-16s: %u\n",     "interval", args->scan.interval);
-    }
+        break;
 
-    if(args->connect.on){
+    case OPT_CONNECT:
         printf("\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\nconnect:\n");
         printf("\t%-16s: %s\n",     "address",  args->connect.address);
         printf("\t%-16s: %u\n",     "addrtype", args->connect.addrtype);
         printf("\t%-16s: %u\n",     "initphy",  args->connect.initphy);
         printf("\t%-16s: %u\n",     "min_interval", args->connect.min_interval);
         printf("\t%-16s: %u\n",     "max_interval", args->connect.max_interval);
-    }
+        break;
 
-    if(args->pair.on){
+    case OPT_PAIR:
         printf("\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\npair:\n");
-        printf("\t%-16s: %u\n",     "mode",   args->pair.mode);
-        printf("\t%-16s: %f\n",     "txpwr",  args->pair.txpwr);
-        printf("\t%-16s: %u\n",     "handle", args->pair.handle);
-        printf("\t%-16s: %u\n",     "pphy",   args->pair.primary_phy);
-        printf("\t%-16s: %u\n",     "sphy",   args->pair.second_phy);
-    }
+        printf("\t%-16s: %u\n",     "mode", args->pair.mode);
+        break;
 
-    if(args->upgrade.on){
+    case OPT_UPGRADE:
         printf("\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\nupgrade:\n");
         printf("\t%-16s: %s\n",     "firmware", args->upgrade.firmware);
-    }
+        break;
 
-    if(args->dtm.on){
+    case OPT_DTM:
         printf("\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\ndtm:\n");
         if(args->dtm.tx.on){
             printf("\ttx:\n");
@@ -405,6 +370,10 @@ void print_args(const struct option_args_t* args)
             printf("\t\t%-16s: %u\n",   "phy",      args->dtm.rx.phy);
             printf("\t\t%-16s: %u\n",   "showpkt",  args->dtm.rx.showpkt);
         }
+        break;
+
+    default:
+        break;
     }
 }
 
@@ -423,10 +392,11 @@ void usage(const char* app_name)
            "\t       [ --interval ]                                        : set scan interval\n"
            "\t       [ --winsize  ]                                        : set scan window size\n"
            "\t       [ --type     ]                                        : set scan type\n"
-           "\t       [ --phy      ]                                        : set scan phy\n"
            "\t       [ --mode     ]                                        : set scan mode\n"
            "\t       [ --timeout  ]                                        : set scan timeout\n\n"
            "\t[ --connect ]                                                : connect device\n"
+           "\t       [ --list     ]                                        : show connections\n"
+           "\t       [ --disconn  ] <conn id>                              : disconnect <conn>\n"
            "\t       [ --address  ]                                        : set remote device's address\n"
            "\t       [ --addrtype ]                                        : set address type\n"
            "\t       [ --initphy  ]                                        : set init phy\n\n"
@@ -447,11 +417,7 @@ void usage(const char* app_name)
            "\t                [ --delay   | -d ]                           : rx test time\n"
            "\t                [ --showpkt | -s ]                           : show packet in hex format\n\n"
            "\t[ --pair  ]                                                  : pair new device\n"
-           "\t       [ --mode     ]                                        : pairing mode\n"
-           "\t       [ --handle   ]                                        : handle set\n"
-           "\t       [ --txpwr    ]                                        : advertise tx power\n"
-           "\t       [ --pphy     ]                                        : set primary phy\n"
-           "\t       [ --sphy     ]                                        : set secondary phy\n\n"
+           "\t       [ --mode     ]                                        : pairing mode\n\n"
            "\t[ --dev   ]                                                  : Config uart\n"
            "\t       [ --baudrate ]                                        : set baudrate\n"
            "\t       [ --flowctrl ]                                        : set flowctrl bits\n"
@@ -476,19 +442,19 @@ int parse_args(int argc, char** argv, struct option_args_t* args)
     memset(args, 0, sizeof(struct option_args_t));
 
     /* set default args */
-    strncpy(args->dev.name, default_uart_port, sizeof(args->dev.name));
+    strncpy(args->dev.name, SCHOST_UART_DEV, sizeof(args->dev.name));
     args->dev.timeout   = 1000;
-    args->dev.baudrate  = default_baud_rate;
-    args->dev.txpwr     = 80.f;
+    args->dev.baudrate  = SCHOST_UART_BAUDRATE;
+    args->dev.txpwr     = 70.f;
     args->dtm.tx.phy    = test_phy_1m;
-    args->dtm.tx.pwr    = 80.0f;
+    args->dtm.tx.pwr    = 70.0f;
     args->dtm.rx.phy    = test_phy_1m;
     args->dtm.tx.pkttype = test_pkt_prbs9;
     
     args->pair.handle   = 0;
     args->pair.primary_phy = le_gap_phy_1m;
     args->pair.second_phy  = le_gap_phy_1m;
-    args->pair.txpwr       = 80.f;
+    args->pair.txpwr       = 70.f;
     args->pair.mode        = 0;
 
     args->scan.type        = 1;
@@ -497,9 +463,9 @@ int parse_args(int argc, char** argv, struct option_args_t* args)
     args->scan.winsize     = 160;
     args->scan.timeout     = 10;
     args->scan.phy         = le_gap_phy_1m;
-    
+
     int sub_opt_index = 0;
-    enum sub_option_e sub_opt_status[16];
+    enum option_e sub_opt_status[16];
     sub_opt_status[0] = OPT_ALL;
 
     while(-1 != (op=getopt_long_only(argc, argv, "", options, &option_index))){
@@ -507,31 +473,32 @@ int parse_args(int argc, char** argv, struct option_args_t* args)
         while(1){
             if(sub_opt_status[sub_opt_index] == OPT_ALL) {
                 if(op == 0 && !strcmp("dtm", options[option_index].name)) {
-                    args->dtm.on = 1;
-                    sub_opt_status[++sub_opt_index] = OPT_DTM;
+                    args->option = sub_opt_status[++sub_opt_index] = OPT_DTM;
+
                 }else if(op == 0 && !strcmp("pair", options[option_index].name)){
-                    args->pair.on = 1;
-                    sub_opt_status[++sub_opt_index] = OPT_PAIR;
+                    args->option = sub_opt_status[++sub_opt_index] = OPT_PAIR;
+
                 }else if(op == 0 && !strcmp("upgrade", options[option_index].name)){
-                    args->upgrade.on = 1;
-                    sub_opt_status[++sub_opt_index] = OPT_UPGRADE;
+                    args->option = sub_opt_status[++sub_opt_index] = OPT_UPGRADE;
+
                 }else if(op == 0 && !strcmp("dev", options[option_index].name)){
-                    args->dev.on = 1;
-                    sub_opt_status[++sub_opt_index] = OPT_DEV;
+                    args->option = sub_opt_status[++sub_opt_index] = OPT_DEV;
+
                 }else if(op == 0 && !strcmp("show", options[option_index].name)){
-                    args->show.on = 1;
-                    sub_opt_status[++sub_opt_index] = OPT_SHOW;
+                    args->option = sub_opt_status[++sub_opt_index] = OPT_SHOW;
+
                 }else if(op == 0 && !strcmp("set", options[option_index].name)){
-                    args->set.on = 1;
-                    sub_opt_status[++sub_opt_index] = OPT_SET;
+                    args->option = sub_opt_status[++sub_opt_index] = OPT_SET;
+
                 }else if(op == 0 && !strcmp("scan", options[option_index].name)){
-                    args->scan.on = 1;
-                    sub_opt_status[++sub_opt_index] = OPT_SCAN;
+                    args->option = sub_opt_status[++sub_opt_index] = OPT_SCAN;
+
                 }else if(op == 0 && !strcmp("connect", options[option_index].name)){
-                    args->connect.on = 1;
-                    sub_opt_status[++sub_opt_index] = OPT_CONNECT;
+                    args->option = sub_opt_status[++sub_opt_index] = OPT_CONNECT;
+
                 }else if(op == 0 && !strcmp("debug", options[option_index].name)){
                     args->debug = 1;
+
                 }else if(op == 0 && !strcmp("help", options[option_index].name)){
                     usage(argv[0]);
                     exit(0);
@@ -554,6 +521,11 @@ int parse_args(int argc, char** argv, struct option_args_t* args)
                 }else if(op == 0 && !strcmp("initphy", options[option_index].name)){
                     parse_init_phy(optarg, &value, "connect.addrtype");
                     args->connect.initphy = (uint8_t)value;
+                }else if(op == 0 && !strcmp("disconn", options[option_index].name)){
+                    parse_int(optarg, &value, 0, CHAR_MAX, "connect.addrtype");
+                    args->connect.disconn = value;
+                }else if(op == 0 && !strcmp("list", options[option_index].name)){
+                    args->connect.show = 1;
                 }else{
                     sub_opt_index --;
                     continue;
@@ -570,7 +542,7 @@ int parse_args(int argc, char** argv, struct option_args_t* args)
                     args->pair.txpwr = (float)value;
                 }else if(op == 0 && !strcmp("handle", options[option_index].name)){
                     parse_int(optarg, &value, 0, CHAR_MAX, "pair.handle");
-                    args->pair.handle = (uint8_t)value;
+                    args->pair.mode = (uint8_t)value;
                 }else if(op == 0 && !strcmp("sphy", options[option_index].name)){
                     parse_second_phy(optarg, &value, "pair.sphy");
                     args->pair.second_phy = (uint8_t)value;
@@ -620,7 +592,6 @@ int parse_args(int argc, char** argv, struct option_args_t* args)
             /* parse dtm's sub option */
             else if(sub_opt_status[sub_opt_index] == OPT_DTM){
                 //printf("dtm.%s\n", options[option_index].name);
-                args->dtm.on = 1;
                 if(op == 0 && !strcmp("rx", options[option_index].name)){
                     args->dtm.rx.on = 1;
                     sub_opt_status[++sub_opt_index] = OPT_RX;

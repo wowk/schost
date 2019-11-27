@@ -146,7 +146,7 @@ int send_socket(struct sock_t* sock, int flags, size_t iov_cnt, ...)
     struct msghdr msghdr;
     struct iovec iovec[iov_cnt];
     va_list val;
-
+    
     va_start(val, iov_cnt);
     for(size_t i = 0 ; i < iov_cnt ; i ++){
         iovec[i].iov_base  = va_arg(val, void*);
@@ -193,7 +193,10 @@ int printf_socket(struct sock_t* sock, const char* fmt, ...)
 {
     va_list vl;
     char buffer[4096] = "";
-    
+
+    if(!sock){
+        return 0;
+    } 
     va_start(vl, fmt);
     vsnprintf(buffer, sizeof(buffer), fmt, vl);
     va_end(vl);

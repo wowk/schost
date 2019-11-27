@@ -20,6 +20,8 @@
 #include "util.h"
 #include <stdarg.h>
 
+#define DTM_TIMER_ID        0x20
+#define DTM_TIMER_INTERVAL  (32768*1)
 
 enum dtm_state_e {
     DTM_TX_INIT, DTM_TX_START, DTM_TX_END,
@@ -50,15 +52,12 @@ static void dtm_tx_init(struct sock_t* sock, const struct option_args_t* args)
  
     printf_socket(sock, ">>>>>>>>> start tx test <<<<<<<<<");
     printf_socket(sock, "\tsend tx command");
-
-    gecko_cmd_system_set_tx_power(args->dev.txpwr);
-    
+ 
     txrsptr = gecko_cmd_test_dtm_tx(pkttype, pktlen, channel, phy);
     
     delay_time = args->dtm.tx.delay / 1000;
 
-    gecko_cmd_hardware_set_soft_timer(0, 0, 0);
-    gecko_cmd_hardware_set_soft_timer(32768,0,0);
+    gecko_cmd_hardware_set_soft_timer(DTM_TIMER_INTERVAL, DTM_TIMER_ID, 0);
 }
 
 static void dtm_rx_init(struct sock_t* sock, const struct option_args_t* args)
@@ -108,9 +107,11 @@ static void dtm_do_action(struct sock_t* sock, struct option_args_t* args, struc
 int dtm_event_handler(struct sock_t* sock, struct option_args_t* args, struct gecko_cmd_packet *evt)
 {
     int ret = BLE_EVENT_CONTINUE;
+    struct gecko_msg_hardware_soft_timer_evt_t* timer_evt;
 
     switch(BGLIB_MSG_ID(evt->header)){
     case gecko_evt_system_boot_id:
+        gecko_cmd_system_set_tx_power(args->dev.txpwr);
         delay_time = 0;
         if(args->dtm.tx.on)
             dtm_state = DTM_TX_INIT;
@@ -120,6 +121,10 @@ int dtm_event_handler(struct sock_t* sock, struct option_args_t* args, struct ge
         break;
 
     case gecko_evt_hardware_soft_timer_id:
+        timer_evt = &evt->data.evt_hardware_soft_timer;
+        if(timer_evt->handle != DTM_TIMER_ID){
+            break;
+        }
         if((--delay_time) == 0){
             //dtm_do_action(args, evt);
             endrsptr = gecko_cmd_test_dtm_end();
@@ -140,4 +145,10 @@ int dtm_event_handler(struct sock_t* sock, struct option_args_t* args, struct ge
     }
 
     return ret;
+}
+
+int dtm_cleanup(struct sock_t* sock, struct option_args_t* args)
+{
+    gecko_cmd_system_reset(0);
+    return 0;
 }

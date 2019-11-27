@@ -20,6 +20,7 @@
 
 int show_cmd_handler(struct sock_t* sock, struct option_args_t* args)
 {
+    char btaddrstr[18] = "";
     struct gecko_msg_flash_ps_load_rsp_t* ps_load_rsp;
     struct gecko_msg_system_get_bt_address_rsp_t* get_bt_rsp;
 
@@ -30,7 +31,7 @@ int show_cmd_handler(struct sock_t* sock, struct option_args_t* args)
     
     if (args->show.btaddr) {
         get_bt_rsp = gecko_cmd_system_get_bt_address();
-        printf_socket(sock, "BT address: %s", ether_ntoa((struct ether_addr*)get_bt_rsp));
+        printf_socket(sock, "BT address: %s", btaddr2str(get_bt_rsp, btaddrstr));
     }
 
     return BLE_EVENT_STOP;

@@ -17,34 +17,55 @@
 #include "app.h"
 #include "util.h"
 #include "sock.h"
+#include "gatt.h"
+#include "connection.h"
 
+
+uint8_t handle = 0;
 
 int pair_cmd_handler(struct sock_t* sock, struct option_args_t* args)
 {
-    gecko_cmd_system_reset(0);
-    return BLE_EVENT_CONTINUE;
+    gecko_cmd_system_set_tx_power(args->dev.txpwr);
+    gecko_cmd_le_gap_set_advertise_phy(handle, args->pair.primary_phy, args->pair.second_phy);
+    gecko_cmd_le_gap_set_advertise_timing(handle, 20, 1000, 100, 0);
+    gecko_cmd_le_gap_set_advertise_tx_power(handle, args->pair.txpwr);
+    gecko_cmd_le_gap_start_advertising(handle, le_gap_general_discoverable, le_gap_connectable_scannable);
+    printf_socket(sock, "enter pairing mode");
+
+    return BLE_EVENT_RETURN;
 }
+
+#if 0
+static int find_attribute(const uint8_t* uuid, uint16_t* attr)
+{
+    struct gecko_msg_gatt_server_find_attribute_rsp_t* attrrsp;
+    
+    attrrsp = gecko_cmd_gatt_server_find_attribute(0, 2, uuid);
+    if(!attrrsp){
+        info("failed to get attr response");
+    }else if(attrrsp->result){
+        info("result: %s(%.4x)\n", error_summary(attrrsp->result), attrrsp->result);
+    }else{
+        info("attribute: %.4x", attrrsp->attribute);
+        *attr = attrrsp->attribute;
+        return 0;
+    }
+
+    return -1;
+}
+#endif
 
 int pair_event_handler(struct sock_t* sock, struct option_args_t* args, struct gecko_cmd_packet *evt)
 {
     int handle = args->pair.handle;
     int ret = BLE_EVENT_CONTINUE;
+    struct gecko_msg_le_connection_opened_evt_t* opened_evt;
+    struct gecko_msg_le_connection_closed_evt_t* closed_evt;
 
     switch (BGLIB_MSG_ID(evt->header)) {
-    case gecko_evt_system_boot_id:
-        gecko_cmd_system_set_tx_power(args->dev.txpwr);
-        gecko_cmd_le_gap_set_advertise_phy(handle, args->pair.primary_phy, args->pair.second_phy);
-        gecko_cmd_le_gap_set_advertise_timing(handle, 20, 1000, 100, 0);
-        gecko_cmd_le_gap_set_advertise_tx_power(handle, args->pair.txpwr);
-        gecko_cmd_le_gap_start_advertising(handle, le_gap_general_discoverable, le_gap_connectable_scannable);
-        struct gecko_msg_system_get_bt_address_rsp_t* btaddr = gecko_cmd_system_get_bt_address();
-        debug(args->debug, "BT address: %s", ether_ntoa((struct ether_addr*)btaddr));
-        printf_socket(sock, "enter pairing mode");
-        ret = BLE_EVENT_RETURN;
-        break;
-
     case gecko_evt_le_connection_opened_id:
-        debug(args->debug, "connection opened");
+        opened_evt = &evt->data.evt_le_connection_opened;
+        connection_opened(opened_evt);
         break;
 
     case gecko_evt_le_connection_parameters_id:
@@ -52,8 +73,10 @@ int pair_event_handler(struct sock_t* sock, struct option_args_t* args, struct g
         break;
 
     case gecko_evt_le_connection_closed_id:
-        debug(args->debug, "connection closed");
-        gecko_cmd_le_gap_start_advertising(handle, le_gap_general_discoverable, le_gap_connectable_scannable);
+        closed_evt = &evt->data.evt_le_connection_closed;
+        connection_closed(closed_evt->connection, closed_evt->reason);
+        gecko_cmd_le_gap_start_advertising(handle, 
+                le_gap_general_discoverable, le_gap_connectable_scannable);
         break;
 
     default:
@@ -65,7 +88,7 @@ int pair_event_handler(struct sock_t* sock, struct option_args_t* args, struct g
 
 int pair_cleanup(struct sock_t* sock, struct option_args_t* args)
 {
-    gecko_cmd_le_gap_stop_advertising(0);
+    gecko_cmd_le_gap_stop_advertising(handle);
 
     return 0;
 }

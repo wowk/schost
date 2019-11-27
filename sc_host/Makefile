@@ -149,7 +149,7 @@ override LDFLAGS +=
 C_SRC +=  \
 ../protocol/bluetooth/ble_stack/src/host/gecko_bglib.c \
 main.c util.c sock.c \
-set.c show.c connect.c pair.c upgrade.c dtm.c scan.c options.c
+set.c show.c connect.c pair.c upgrade.c dtm.c scan.c options.c connection.c command.c
 
 # this file should be the last added
 ifeq ($(OS),posix)
@@ -197,7 +197,7 @@ release:  $(EXE_DIR)/$(PROJECTNAME)
 # Create objects from C SRC files
 $(OBJ_DIR)/%.o: %.c
 	@echo "Building file: $<"
-	$(CC) $(CFLAGS) $(INCLUDEPATHS) -c -o $@ $<
+	$(CC) $(CFLAGS) $(INCLUDEPATHS) -std=gnu99 -D_GNU_SOURCE -c -o $@ $<
 
 # Assemble .s/.S files
 $(OBJ_DIR)/%.o: %.s

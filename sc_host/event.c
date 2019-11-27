@@ -22,8 +22,6 @@
 #include "util.h"
 #include "sock.h"
 
-#define SCAN_TIMER_ID       0x10
-#define SCAN_TIMER_INTERVAL (1*32767)
 
 static int scan_time = 0;
 
@@ -98,7 +96,7 @@ int  scan_cmd_handler(struct sock_t* sock, struct option_args_t* args)
     gecko_cmd_le_gap_set_discovery_timing(args->scan.phy, args->scan.interval, args->scan.winsize);
     gecko_cmd_le_gap_set_discovery_type(args->scan.phy, args->scan.type);
     gecko_cmd_le_gap_start_discovery(args->scan.phy, args->scan.mode);
-    gecko_cmd_hardware_set_soft_timer(SCAN_TIMER_INTERVAL, SCAN_TIMER_ID,0);
+    gecko_cmd_hardware_set_soft_timer(32768,0,0);
 
     return BLE_EVENT_CONTINUE;
 }
@@ -107,9 +105,27 @@ int  scan_event_handler(struct sock_t* sock, struct option_args_t* args, struct 
 {
     int ret = BLE_EVENT_CONTINUE;
     struct gecko_msg_le_gap_scan_response_evt_t* scanrsptr = NULL;
-    struct gecko_msg_hardware_soft_timer_evt_t* timer_evt;
+
 
     switch (BGLIB_MSG_ID(evt->header)) {
+    case gecko_evt_system_boot_id:
+    case gecko_evt_dfu_boot_id:
+    case gecko_evt_dfu_boot_failure_id:
+    case gecko_evt_le_connection_opened_id:
+    case gecko_evt_le_connection_parameters_id:
+    case gecko_evt_le_connection_rssi_id:
+    case gecko_evt_le_connection_phy_status_id:
+    case gecko_evt_le_connection_closed_id:
+    case gecko_evt_hardware_soft_timer_id:
+    case gecko_evt_test_dtm_completed_id:
+    case gecko_evt_le_gap_scan_response_id:
+    case gecko_evt_le_gap_scan_request_id:
+    case gecko_evt_hardware_soft_timer_id:
+        break;
+    case gecko_evt_system_boot_id:
+        scan_cmd_handler(sock, args);
+        break;
+
     case gecko_evt_le_gap_scan_response_id:
         scanrsptr = &evt->data.evt_le_gap_scan_response;
         add_neigh_to_list(args->scan.phy, &neigh_list, scanrsptr); 
@@ -119,10 +135,7 @@ int  scan_event_handler(struct sock_t* sock, struct option_args_t* args, struct 
         break;
 
     case gecko_evt_hardware_soft_timer_id:
-        timer_evt = &evt->data.evt_hardware_soft_timer;
-        if(timer_evt->handle != SCAN_TIMER_ID){
-            break;
-        }else if (scan_time == 0) {
+        if (scan_time == 0) {
             debug(args->debug, "timeout<1>: %d", scan_time);
             dump_neigh_list(sock, &neigh_list);
             free_neigh_list(&neigh_list);
@@ -143,6 +156,5 @@ int  scan_event_handler(struct sock_t* sock, struct option_args_t* args, struct 
 int scan_cleanup(struct sock_t* sock, struct option_args_t* args)
 {
     gecko_cmd_le_gap_end_procedure();
-    gecko_cmd_hardware_set_soft_timer(0, SCAN_TIMER_ID,0);
     return 0;
 }

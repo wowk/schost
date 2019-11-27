@@ -35,6 +35,7 @@ int set_cleanup(struct sock_t* sock, struct option_args_t* args);
 int dtm_cmd_handler(struct sock_t* sock, struct option_args_t* args);
 int dtm_event_handler(struct sock_t* sock, struct option_args_t* args, 
                         struct gecko_cmd_packet *evt);
+int dtm_cleanup(struct sock_t* sock, struct option_args_t* args);
 
 int scan_cmd_handler(struct sock_t* sock, struct option_args_t* args);
 int scan_event_handler(struct sock_t* sock, struct option_args_t* args, 
@@ -44,6 +45,7 @@ int scan_cleanup(struct sock_t* sock, struct option_args_t* args);
 int connect_cmd_handler(struct sock_t* sock, struct option_args_t* args);
 int connect_event_handler(struct sock_t* sock, struct option_args_t* args, 
                         struct gecko_cmd_packet *evt);
+int connection_cleanup(struct sock_t* sock, struct option_args_t* args);
 
 int pair_cmd_handler(struct sock_t* sock, struct option_args_t* args);
 int pair_event_handler(struct sock_t* sock, struct option_args_t* args, 

@@ -13,9 +13,12 @@
 #define BLE_CONNECTION BLE_INFO"connection"
 #define BLE_DEVNAME    BLE_INFO"devname"
 
+extern char* btaddr2str(void* addr,  char* buf);
+extern void* str2btaddr(char* str, void* buf);
 extern void echo(int append, const char* file, const char* format, ...);
 extern size_t cat(const char* file, char** pdata, size_t len);
 extern void show_file(FILE* fp, const char* file, size_t len);
 const const char* error_summary(int result);
+int process_running(const char* pidfile);
 
 #endif

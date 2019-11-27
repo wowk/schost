@@ -10,74 +10,58 @@
 #include "app.h"
 #include "args.h"
 #include "sock.h"
+#include "connection.h"
 
 
-struct connection_t {
-    bool    used;
-    uint8_t handle;
-};
+static int connect_address(struct sock_t* sock, struct option_args_t* args)
+{
+    bd_addr addr;
+    struct connection_t* conn;
 
-static struct connection_t conn_tab[256];
-static struct gecko_msg_le_gap_connect_rsp_t* connrsptr = NULL;
+    str2btaddr((char*)args->connect.address, &addr);
+    conn = connection_find_by_addr(&addr);
+    if(conn){
+        printf_socket(sock, "Already Connected");
+        return BLE_EVENT_RETURN;
+    }
 
+    gecko_cmd_le_gap_connect(addr, args->connect.addrtype, args->connect.initphy);
+    printf_socket(sock, "Connecting %s", (char*)args->connect.address);
+
+    return BLE_EVENT_RETURN;
+}
+
+static int connection_dump(struct connection_t* conn, void* args)
+{
+    char address[18] = "";
+    struct sock_t* sock = (struct sock_t*)args;
+
+    if(conn->used){
+        btaddr2str(&conn->address, address);
+        printf_socket(sock, "%-4d%-25s%d", conn->connection, address, conn->addrtype);
+    }
+
+    return 0;
+}
 
 int connect_cmd_handler(struct sock_t* sock, struct option_args_t* args)
 {
-    gecko_cmd_system_reset(0);
+    struct connection_t* conn;
 
-    return BLE_EVENT_CONTINUE;
-}
-
-int connect_event_handler(struct sock_t* sock, struct option_args_t* args, struct gecko_cmd_packet *evt)
-{
-    int ret = BLE_EVENT_CONTINUE;
-
-    bd_addr addr;
-    struct gecko_msg_le_connection_opened_evt_t* opened_evt;
-    struct gecko_msg_le_connection_closed_evt_t* closed_evt;
-    //struct gecko_msg_le_connection_parameters_evt_t* params_evt;
-
-    switch (BGLIB_MSG_ID(evt->header)){
-    case gecko_evt_system_boot_id:
-        ether_aton_r((char*)args->connect.address, (struct ether_addr*)&addr);
-        //gecko_cmd_le_gap_set_conn_parameters(100, 1000, 1000, 0x0c80);
-        connrsptr = gecko_cmd_le_gap_connect(addr, args->connect.addrtype, args->connect.initphy);
-        printf_socket(sock, "connect device: %s", (char*)args->connect.address);
-        break;
-
-    case gecko_evt_le_connection_opened_id:
-        opened_evt = &evt->data.evt_le_connection_opened; 
-        conn_tab[opened_evt->connection].used = true;
-        conn_tab[opened_evt->connection].handle = opened_evt->connection;
-        printf_socket(sock, "connected: %u", connrsptr->connection);
-        ret = BLE_EVENT_RETURN;
-        break;
-
-    case gecko_evt_le_connection_parameters_id:
-        //params_evt = &evt->data.evt_le_connection_parameters;
-        info("connect parameters");
-        break;
-
-    case gecko_evt_le_connection_rssi_id:
-        info("connection rssi");
-        break;
-
-    case gecko_evt_le_connection_phy_status_id:
-        info("connection phy status");
-        break;
-
-    case gecko_evt_le_connection_closed_id:
-        closed_evt = &evt->data.evt_le_connection_closed;
-        conn_tab[closed_evt->connection].used = false;
-        info("connection closed");
-        gecko_cmd_system_reset(0);
-        /* Restart general advertising and re-enable connections after disconnection. */
-        //gecko_cmd_le_gap_start_advertising(handle, le_gap_general_discoverable, le_gap_undirected_connectable);
-        break;
-
-    default:
-        break;
+    if(args->connect.show) {
+        printf_socket(sock, "%-4s%-25s%s", "ID", "Address", "AddrType");
+        connection_visit(connection_dump, sock);        
+        return BLE_EVENT_RETURN;
+    }else if(args->connect.disconn){
+        conn = connection_find_by_conn(args->connect.disconn);
+        if(conn){
+            gecko_cmd_le_connection_close(conn->connection);
+            return BLE_EVENT_CONTINUE;
+        }
+    }else if(args->connect.address[0]){
+        return connect_address(sock, args);
     }
 
-    return ret;
+    return BLE_EVENT_RETURN;
 }
+
