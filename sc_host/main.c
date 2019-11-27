@@ -31,7 +31,7 @@ int schost_main(int argc, char* argv[])
         error(1, errno, "failed bind to sc_host");
     } 
 
-    socket_addr(&sock->daddr, AF_LOCAL, SCHOST_CLIENT_USOCK, 0, &sock->socklen);
+    socket_addr(&sock->daddr, AF_LOCAL, SCHOST_SERVER_USOCK, 0, &sock->socklen);
 
     if(0 > send_socket(sock, 0, 1, &command, sizeof(command))){
         error(1, errno, "failed to send command to schostd");
@@ -86,9 +86,9 @@ int schostd_main(int argc, char *argv[])
     conf.dev.baudrate   = SCHOST_UART_BAUDRATE;
     conf.dev.txpwr      = SCHOST_UART_DEF_PWR;
     strcpy(conf.dev.name, SCHOST_UART_DEV);
-    if (app_serial_port_init(&command, 100) < 0) {
-        error(1, errno, "Non-blocking serial port init failure");
-    }
+    //if (app_serial_port_init(&command, 100) < 0) {
+    //    error(0, errno, "Non-blocking serial port init failure");
+    //}
 
     if (process_running(SCHOST_PID_FILE)) {
         error(1, errno, "schostd stop exist sc_host process first");
@@ -104,7 +104,7 @@ int schostd_main(int argc, char *argv[])
     }
 
     ctl_fd = sock->fd;
-    uart_fd = uartHandle();
+    //uart_fd = uartHandle();
     if(ctl_fd > uart_fd)
         maxfd = ctl_fd;
     else
@@ -112,14 +112,15 @@ int schostd_main(int argc, char *argv[])
     
     FD_ZERO(&rfdset_save);
     FD_SET(ctl_fd, &rfdset_save);
-    FD_SET(uart_fd, &rfdset_save);
+	maxfd = ctl_fd;
+    //FD_SET(uart_fd, &rfdset_save);
    
     /* ************************************************************
      * Reset NCP to ensure it gets into a defined state.
      * Once the chip successfully boots, gecko_evt_system_boot_id 
      * event should be received. 
      * ************************************************************/
-    gecko_cmd_system_reset(0);
+    //gecko_cmd_system_reset(0);
     
     debug(conf.debug, "Starting up...");
     debug(conf.debug, "Resetting NCP target...");
@@ -214,7 +215,7 @@ static void on_message_send(uint32_t msg_len, uint8_t *msg_data)
     ret = uartTx(msg_len, msg_data);
     if (ret < 0) {
         printf("Failed to write to serial port, ret: %d, errno: %s\n", ret, strerror(errno));
-        exit(EXIT_FAILURE);
+        //exit(EXIT_FAILURE);
     }
 }
 
