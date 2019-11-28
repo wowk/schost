@@ -149,7 +149,7 @@ override LDFLAGS +=
 C_SRC +=  \
 ../protocol/bluetooth/ble_stack/src/host/gecko_bglib.c \
 main.c util.c sock.c \
-set.c show.c connect.c pair.c upgrade.c dtm.c cts.c gatt.c scan.c options.c connection.c command.c
+set.c show.c connect.c pair.c upgrade.c dtm.c cts.c timer.c gatt.c scan.c options.c connection.c command.c
 
 # this file should be the last added
 ifeq ($(OS),posix)

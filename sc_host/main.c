@@ -1,5 +1,6 @@
 #include "debug.h"
 #include "sock.h"
+#include "timer.h"
 #include "options.h"
 #include "headers.h"
 #include "connection.h"
@@ -69,7 +70,6 @@ int schostd_main(int argc, char *argv[])
 
     enum option_e cmd;
     enum option_e new_cmd;
-    enum option_e state;
 
     struct gecko_cmd_packet *evt = NULL;
     struct option_args_t conf;
@@ -146,6 +146,12 @@ int schostd_main(int argc, char *argv[])
             switch (BGLIB_MSG_ID(evt->header)) {
             case gecko_evt_dfu_boot_id:
             case gecko_evt_system_boot_id:
+                hw_timer_list_clear();
+                //notify_list_clear();
+                //read_request_list_clear();
+                //write_request_list_clear();
+                //discover_request_list_clear();
+
                 info("Bootup done");
                 for(int i = 0 ; i < OPT_ALL ; i ++){
                     if(!cmd_tab[i].bootup_handler){
@@ -215,7 +221,6 @@ int schostd_main(int argc, char *argv[])
                 break;
             }
             
-            state = new_cmd;
             if(cmd_tab[cmd].cleanup){
                 cmd_tab[cmd].cleanup(sock, &conf);
             }

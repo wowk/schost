@@ -712,6 +712,37 @@ int parse_args(int argc, char** argv, struct option_args_t* args)
                 }
             }
 
+            /* parse gatt's sub option */
+            else if ( sub_opt_status[sub_opt_index] == OPT_GATT ) {
+                if ( op == 0 && !strcmp("name", options[option_index].name) ) {
+                    //snprintf(args->dev.name, sizeof(args->gatt.name), "%s", optarg);
+                } else if ( op == 0 && !strcmp("baudrate", options[option_index].name) ) {
+                    parse_int(optarg, &value, 0, INT_MAX, "baudrate");
+                    args->dev.baudrate = (uint32_t)value;
+                } else if ( op == 0 && !strcmp("flowctrl", options[option_index].name) ) {
+                    parse_int(optarg, &value, 0, INT_MAX, "flowctrl");
+                    args->dev.flowctrl = (uint32_t)value;
+                } else if ( op == 0 && !strcmp("timeout", options[option_index].name) ) {
+                    parse_int(optarg, &value, 0, INT_MAX, "timeout");
+                    args->dev.timeout = (uint32_t)value;
+                } else if ( op == 0 && !strcmp("txpwr", options[option_index].name) ) {
+                    parse_float(optarg, &dvalue, -100000.0, 100000.0, "dev.txpwr");
+                    args->dev.txpwr = (float)dvalue;
+                } else {
+                    sub_opt_index --;
+                    continue;
+                }
+            }
+
+
+#if 0
+    {"gatt",            no_argument,        0, 0},
+        {"connid",      required_argument,  0, 0},
+        {"read",        required_argument,  0, 0},
+        {"write",       required_argument,  0, 0},
+        {"notify",      required_argument,  0, 0},
+        {"value",       required_argument,  0, 0},
+#endif
             break;
         }
     }
