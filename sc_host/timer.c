@@ -18,7 +18,7 @@ write_request_list
 discover_request_list
 #endif
 
-
+#include "debug.h"
 #include "timer.h"
 #include "host_gecko.h"
 #include <stdint.h>
@@ -55,9 +55,10 @@ int hw_timer_add(struct hw_timer_t* t)
     if(!timer_elem){
         return -1;
     }
-
-    timer_elem->hw_timer = *timer;
-
+    timer_elem->hw_timer = *t;
+    timer = &timer_elem->hw_timer;
+    timer->interval = t->interval *32768;
+    gecko_cmd_hardware_set_soft_timer(timer->interval, timer->id, 0);
     LIST_INSERT_HEAD(&hw_timer_list, timer_elem, entry);
 
     return 0;
@@ -93,17 +94,18 @@ int hw_timer_del(struct hw_timer_t* timer)
     return -1;
 }
 
-int hw_timer_update(struct gecko_msg_hardware_soft_timer_evt_t* evt)
+void hw_timer_list_update(struct gecko_msg_hardware_soft_timer_evt_t* evt)
 {
     struct hw_timer_elem_t* elem;
-    struct hw_timer_elem_t* deleted;
+    struct hw_timer_elem_t* deleted = NULL;
     
     LIST_FOREACH(elem, &hw_timer_list, entry){
+        info("%d========%d", elem->hw_timer.id, evt->handle);
         if(elem->hw_timer.id == evt->handle){
             elem->hw_timer.callback(elem->hw_timer.arg);
             if(elem->hw_timer.count == 1){
                 deleted = elem;
-            }else{
+            }else if(elem->hw_timer.count > 0){
                 elem->hw_timer.count --;
             }
             break;
@@ -115,8 +117,6 @@ int hw_timer_update(struct gecko_msg_hardware_soft_timer_evt_t* evt)
         gecko_cmd_hardware_set_soft_timer(0, deleted->hw_timer.id, 0);
         free(deleted);
     }
-
-    return 0;
 }
 
 struct hw_timer_t* hw_timer_find(uint8_t timerid)

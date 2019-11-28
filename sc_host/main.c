@@ -74,6 +74,7 @@ int schostd_main(int argc, char *argv[])
     struct gecko_cmd_packet *evt = NULL;
     struct option_args_t conf;
     struct option_args_t command;
+    struct gecko_msg_hardware_soft_timer_evt_t* timer_evt;
     
     info("Build Time: Date: %s, Time: %s\n", __DATE__, __TIME__);
     daemon(0,1);
@@ -159,6 +160,10 @@ int schostd_main(int argc, char *argv[])
                     }
                     cmd_tab[i].bootup_handler(&conf);
                 }
+                break;
+            case gecko_evt_hardware_soft_timer_id:
+                timer_evt = &evt->data.evt_hardware_soft_timer;
+                hw_timer_list_update(timer_evt);
                 break;
             }
             
