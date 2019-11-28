@@ -73,10 +73,18 @@ static struct option options[] = {
         {"address",     required_argument,  0, 0},
         {"addrtype",    required_argument,  0, 0},
         {"initphy",     required_argument,  0, 0},
+        {"select",      no_argument,        0, 0},
 
     /* upgrade BT firmware */
     {"upgrade",         no_argument,        0, 0},
         {"firmware",    required_argument,  0, 0},
+
+    {"gatt",            no_argument,        0, 0},
+        {"connid",      required_argument,  0, 0},
+        {"read",        required_argument,  0, 0},
+        {"write",       required_argument,  0, 0},
+        {"notify",      required_argument,  0, 0},
+        {"value",       required_argument,  0, 0},
 
     /* dev sub options */
     {"dev",             no_argument,        0, 0},
@@ -503,9 +511,11 @@ int parse_args(int argc, char** argv, struct option_args_t* args)
                     usage(argv[0]);
                     exit(0);
                 }else if(op == '?'){
+                    usage(argv[0]);
                     exit(-EINVAL);
                 }else{
                     /* never get here */
+                    usage(argv[0]);
                     exit(-EINVAL);
                 }
             }

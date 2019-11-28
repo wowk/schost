@@ -11,9 +11,11 @@ enum option_e {
     OPT_SET,
     OPT_PAIR,
     OPT_UPGRADE,
+    OPT_GATT,
     OPT_DTM,
         OPT_TX,
         OPT_RX, 
+    OPT_IDLE,
     OPT_ALL,
 };
 
@@ -96,6 +98,16 @@ struct set_arg_t {
     uint8_t name[64];
 };
 
+struct gatt_arg_t {
+    uint8_t connid;
+    uint16_t read_uuid;
+    uint16_t write_uuid;
+    uint16_t notify_uuid;
+    uint8_t* value;
+    uint8_t len;
+
+};
+
 struct option_args_t {
     struct dev_arg_t dev;
     struct scan_arg_t scan;
@@ -105,6 +117,7 @@ struct option_args_t {
     struct upgrade_arg_t upgrade;
     struct set_arg_t set;
     struct dtm_arg_t dtm;
+    struct gatt_arg_t gatt;
 
     uint8_t option;
 	uint8_t debug;

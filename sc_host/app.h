@@ -20,6 +20,7 @@ enum {
     BLE_EVENT_STOP,
     BLE_EVENT_CONTINUE,
     BLE_EVENT_RETURN,
+    BLE_EVENT_IGNORE,
 };
 
 struct gecko_cmd_packet;
@@ -47,6 +48,7 @@ int connect_event_handler(struct sock_t* sock, struct option_args_t* args,
                         struct gecko_cmd_packet *evt);
 int connection_cleanup(struct sock_t* sock, struct option_args_t* args);
 
+int pair_bootup_handler(struct option_args_t* args);
 int pair_cmd_handler(struct sock_t* sock, struct option_args_t* args);
 int pair_event_handler(struct sock_t* sock, struct option_args_t* args, 
                         struct gecko_cmd_packet *evt);
@@ -56,6 +58,12 @@ int upgrade_cmd_handler(struct sock_t* sock, struct option_args_t* args);
 int upgrade_event_handler(struct sock_t* sock, struct option_args_t* args, 
                         struct gecko_cmd_packet* evt);
 int upgrade_cleanup(struct sock_t* sock, struct option_args_t* args);
+
+int gatt_bootup_handler(struct option_args_t* args);
+int gatt_cmd_handler(struct sock_t* sock, struct option_args_t* args);
+int gatt_event_handler(struct sock_t* sock, struct option_args_t* args, 
+        struct gecko_cmd_packet *evt);
+int gatt_cleanup(struct sock_t* sock, struct option_args_t* args);
 
 #ifdef __cplusplus
 };

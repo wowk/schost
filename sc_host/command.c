@@ -18,7 +18,8 @@ struct cmd_table_t cmd_tab[OPT_ALL] = {
   
     [OPT_PAIR]    = {
         .name = "PAIR",
-        .single_shot = false, 
+        .single_shot = false,
+        .bootup_handler = pair_bootup_handler,
         .cmd_handler = pair_cmd_handler,    
         .event_handler = pair_event_handler,
         .cleanup     = pair_cleanup,
@@ -52,6 +53,15 @@ struct cmd_table_t cmd_tab[OPT_ALL] = {
         .cmd_handler = upgrade_cmd_handler, 
         .event_handler = upgrade_event_handler, 
         .cleanup = upgrade_cleanup
+    },
+
+    [OPT_GATT]    = {
+        .name = "GATT",
+        .single_shot = false,
+        .bootup_handler = gatt_bootup_handler,
+        .cmd_handler = gatt_cmd_handler,
+        .event_handler = gatt_event_handler,
+        .cleanup = gatt_cleanup,
     },
 }; 
 

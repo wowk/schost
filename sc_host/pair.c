@@ -23,6 +23,12 @@
 
 uint8_t handle = 0;
 
+int pair_bootup_handler(struct option_args_t* args)
+{
+    connection_clear();
+    return 0;
+}
+
 int pair_cmd_handler(struct sock_t* sock, struct option_args_t* args)
 {
     gecko_cmd_system_set_tx_power(args->dev.txpwr);
@@ -34,26 +40,6 @@ int pair_cmd_handler(struct sock_t* sock, struct option_args_t* args)
 
     return BLE_EVENT_RETURN;
 }
-
-#if 0
-static int find_attribute(const uint8_t* uuid, uint16_t* attr)
-{
-    struct gecko_msg_gatt_server_find_attribute_rsp_t* attrrsp;
-    
-    attrrsp = gecko_cmd_gatt_server_find_attribute(0, 2, uuid);
-    if(!attrrsp){
-        info("failed to get attr response");
-    }else if(attrrsp->result){
-        info("result: %s(%.4x)\n", error_summary(attrrsp->result), attrrsp->result);
-    }else{
-        info("attribute: %.4x", attrrsp->attribute);
-        *attr = attrrsp->attribute;
-        return 0;
-    }
-
-    return -1;
-}
-#endif
 
 int pair_event_handler(struct sock_t* sock, struct option_args_t* args, struct gecko_cmd_packet *evt)
 {

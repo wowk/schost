@@ -2,6 +2,7 @@
 #include "sock.h"
 #include "options.h"
 #include "headers.h"
+#include "connection.h"
 
 
 BGLIB_DEFINE();
@@ -68,9 +69,8 @@ int schostd_main(int argc, char *argv[])
 
     enum option_e cmd;
     enum option_e new_cmd;
-    enum option_e default_cmd = OPT_PAIR;
+    enum option_e state;
 
-    struct cmd_table_t* cmd_ops = NULL;
     struct gecko_cmd_packet *evt = NULL;
     struct option_args_t conf;
     struct option_args_t command;
@@ -126,6 +126,8 @@ int schostd_main(int argc, char *argv[])
     debug(conf.debug, "Starting up...");
     debug(conf.debug, "Resetting NCP target...");
 
+    cmd = OPT_IDLE;
+
     while (1) {
         rfdset = rfdset_save;
 
@@ -137,37 +139,34 @@ int schostd_main(int argc, char *argv[])
         if(FD_ISSET(uart_fd, &rfdset)){
             /* Check for stack event. */
             evt = gecko_peek_event();
-            
+            if(!evt){
+                continue;
+            }
+
             switch (BGLIB_MSG_ID(evt->header)) {
             case gecko_evt_dfu_boot_id:
             case gecko_evt_system_boot_id:
-                connection_clear();
+                info("Bootup done");
+                for(int i = 0 ; i < OPT_ALL ; i ++){
+                    if(!cmd_tab[i].bootup_handler){
+                        continue;
+                    }
+                    cmd_tab[i].bootup_handler(&conf);
+                }
                 break;
             }
-
-            if (evt && cmd_ops){
-                info("Do %s Event Handling", cmd_ops->name);
-                int ret = cmd_ops->event_handler(sock, &conf, evt);
-                switch(ret){
-                case BLE_EVENT_RETURN:
-                    send_socket(sock, 0, 1, "", 0);
-                    break;
-
-                case BLE_EVENT_STOP:
-                    send_socket(sock, 0, 1, "", 0);
-                    if(cmd_ops->cleanup){
-                        info("Do %s Cleanup", cmd_ops->name);
-                        cmd_ops->cleanup(sock, &conf);
+            
+            for(int i = 0 ; i < OPT_ALL ; i ++){
+                if(!cmd_tab[i].event_handler){
+                    continue;
+                }else if(cmd != OPT_IDLE && cmd == i){
+                    ret = cmd_tab[i].event_handler(sock, &conf, evt);
+                    if(ret == BLE_EVENT_RETURN || ret == BLE_EVENT_STOP){
+                        send_socket(sock, 0, 1, "", 0);
+                        cmd = OPT_IDLE;
                     }
-                    cmd = default_cmd;
-                    cmd_ops = &cmd_tab[cmd];
-                    cmd_ops->cmd_handler(NULL, &conf);
-                    info("Back to %s", cmd_ops->name);
-                    break;
-                case BLE_EVENT_CONTINUE:
-                    break;
-                default:
-                    break;
+                }else{
+                    cmd_tab[i].event_handler(sock, &conf, evt);
                 }
             }
         }
@@ -177,28 +176,18 @@ int schostd_main(int argc, char *argv[])
             if(retlen != sizeof(command)){
                 continue;
             }
-
+            
             new_cmd = command.option;
-            debug(conf.debug, "get command from client");
             info("Do %s Cmd Handling", cmd_tab[new_cmd].name);
             if(cmd_tab[new_cmd].single_shot){
-                cmd_tab[new_cmd].cmd_handler(sock, &conf);
+                cmd_tab[new_cmd].cmd_handler(sock, &command);
                 if(cmd_tab[new_cmd].cleanup){
                     cmd_tab[new_cmd].cleanup(sock, &command);
                     info("Do %s Cleanup", cmd_tab[new_cmd].name);
                 }
                 send_socket(sock, 0, 1, "", 0);
+                cmd = OPT_IDLE;
                 continue;
-            }
-
-            if(new_cmd != cmd){
-                if(cmd_ops && cmd_ops->cleanup){
-                    cmd_ops->cleanup(sock, &conf);
-                    info("Do %s Cleanup", cmd_ops->name);
-                }
-                cmd = new_cmd;
-                cmd_ops = &cmd_tab[cmd];
-                info("Convert to command %s", cmd_ops->name);
             }
 
             switch(new_cmd){
@@ -225,18 +214,25 @@ int schostd_main(int argc, char *argv[])
             default:
                 break;
             }
-
-            ret = cmd_ops->cmd_handler(sock, &conf);
+            
+            state = new_cmd;
+            if(cmd_tab[cmd].cleanup){
+                cmd_tab[cmd].cleanup(sock, &conf);
+            }
+            ret = cmd_tab[new_cmd].cmd_handler(sock, &conf);
             if(ret == BLE_EVENT_STOP){
-                if(cmd_ops->cleanup){
-                    cmd_ops->cleanup(sock, &conf);
+                if(cmd_tab[new_cmd].cleanup){
+                    cmd_tab[new_cmd].cleanup(sock, &conf);
                     info("Do %s Cleanup", cmd_tab[new_cmd].name);
                 }
-                cmd = default_cmd;
-                cmd_ops = &cmd_tab[cmd];
-                info("Back to %s command", cmd_ops->name);
+                info("Back to %s command", cmd_tab[OPT_PAIR].name);
+                cmd_tab[OPT_PAIR].cmd_handler(sock, &conf);
+                cmd = OPT_IDLE;
             }else if(ret == BLE_EVENT_RETURN){
                 send_socket(sock, 0, 1, "", 0);
+                cmd = OPT_IDLE;
+            }else{
+                cmd = new_cmd;
             }
         }
     }
