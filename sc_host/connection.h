@@ -25,6 +25,7 @@ void connection_visit(int(*visit_cb)(struct connection_t*, void*), void* args);
 struct connection_t* connection_find_by_addr(bd_addr* addr);
 struct connection_t* connection_find_unused(void);
 struct connection_t* connection_find_by_conn(int conn);
+void connection_clear();
 
 #ifdef __cplusplus
 }

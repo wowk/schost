@@ -21,6 +21,7 @@ LIST_HEAD(connection_list_t, connection_elem_t);
 
 struct connection_list_t connection_list;
 
+
 int connection_opened(struct gecko_msg_le_connection_opened_evt_t* evt)
 {
     struct connection_t* conn;
@@ -42,6 +43,7 @@ int connection_opened(struct gecko_msg_le_connection_opened_evt_t* evt)
     conn->advertiser = evt->advertiser;
     conn->address    = evt->address;
     conn->used = true;
+    info("connection opened: %u", conn->connection);
 
     return 0;
 }
@@ -56,6 +58,7 @@ int connection_closed(uint8_t connid, uint16_t reason)
     }
     conn->used = false;
     conn->reason = reason;
+    info("connection closed");
 
     return 0;
 }
@@ -70,9 +73,6 @@ void connection_visit(int(*visit_cb)(struct connection_t*, void*), void* args)
     struct connection_elem_t* elem = NULL;
 
     LIST_FOREACH(elem, &connection_list, entry){
-        if(elem->conn.used == false){
-            continue;
-        }
         if(visit_cb(&elem->conn, args)){
             break;
         }
@@ -113,6 +113,18 @@ static int find_by_connid(struct connection_t* conn, void* args)
     }
 
     return 0;
+}
+
+static int clear_conn(struct connection_t* conn, void* args)
+{
+    conn->used = 0;
+    conn->reason = 0;
+    return 0;
+}
+
+void connection_clear()
+{
+    connection_visit(clear_conn, NULL);
 }
 
 struct connection_t* connection_find_unused()

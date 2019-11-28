@@ -36,7 +36,9 @@ static int connection_dump(struct connection_t* conn, void* args)
     char address[18] = "";
     struct sock_t* sock = (struct sock_t*)args;
 
+    info("dump: %u", conn->connection);
     if(conn->used){
+        info("Found");
         btaddr2str(&conn->address, address);
         printf_socket(sock, "%-4d%-25s%d", conn->connection, address, conn->addrtype);
     }
@@ -48,6 +50,7 @@ int connect_cmd_handler(struct sock_t* sock, struct option_args_t* args)
 {
     struct connection_t* conn;
 
+    info("connect command");
     if(args->connect.show) {
         printf_socket(sock, "%-4s%-25s%s", "ID", "Address", "AddrType");
         connection_visit(connection_dump, sock);        
