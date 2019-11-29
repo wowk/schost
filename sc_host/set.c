@@ -43,6 +43,6 @@ int set_cmd_handler(struct sock_t* sock, struct option_args_t* args)
 int set_cleanup(struct sock_t* sock, struct option_args_t* args)
 {
     /* after reset, MAC address will be updated */
-    gecko_cmd_system_reset(0);
+    ble_system_reset(0);
     return 0;
 }

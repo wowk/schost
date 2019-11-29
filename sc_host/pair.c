@@ -23,7 +23,7 @@
 
 uint8_t handle = 0;
 
-int pair_bootup_handler(struct option_args_t* args)
+int pair_bootup_handler(struct sock_t* sock, struct option_args_t* args)
 {
     connection_clear();
     return 0;

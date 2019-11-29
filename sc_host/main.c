@@ -17,7 +17,7 @@ int schost_main(int argc, char* argv[])
     char buffer[512];
     struct sock_t* sock;
     struct option_args_t command;
-
+    
     if(0 > parse_args(argc, argv, &command)){
         error(1, EINVAL, "failed to parse args");
     }
@@ -87,6 +87,8 @@ int schostd_main(int argc, char *argv[])
     conf.dev.baudrate   = SCHOST_UART_BAUDRATE;
     conf.dev.txpwr      = SCHOST_UART_DEF_PWR;
     strcpy(conf.dev.name, SCHOST_UART_DEV);
+    parse_args(argc, argv, &conf);
+
     if (app_serial_port_init(&conf, 100) < 0) {
         error(0, errno, "Non-blocking serial port init failure");
     }
@@ -111,7 +113,6 @@ int schostd_main(int argc, char *argv[])
         maxfd = ctl_fd;
     else
         maxfd = uart_fd;
-    
     FD_ZERO(&rfdset_save);
     FD_SET(ctl_fd, &rfdset_save);
 	maxfd = ctl_fd;
@@ -122,7 +123,7 @@ int schostd_main(int argc, char *argv[])
      * Once the chip successfully boots, gecko_evt_system_boot_id 
      * event should be received. 
      * ************************************************************/
-    gecko_cmd_system_reset(0);
+    ble_system_reset();
      
     debug(conf.debug, "Starting up...");
     debug(conf.debug, "Resetting NCP target...");
@@ -136,29 +137,35 @@ int schostd_main(int argc, char *argv[])
         if(ret < 0){
             error(1, errno, "failed to select socket");
         }
-
+        
         if(FD_ISSET(uart_fd, &rfdset)){
             /* Check for stack event. */
             evt = gecko_peek_event();
             if(!evt){
                 continue;
+            }else if(!ble_is_bootup()){
+                if(gecko_evt_system_boot_id == BGLIB_MSG_ID(evt->header)) {
+                    ble_bootup_done();
+                }else{
+                    continue;
+                }
             }
-
+            info("system done"); 
+            //info("Event: %.8x\n", BGLIB_MSG_ID(evt->header));
             switch (BGLIB_MSG_ID(evt->header)) {
-            case gecko_evt_dfu_boot_id:
             case gecko_evt_system_boot_id:
+                cmd = OPT_IDLE;
                 hw_timer_list_clear();
                 //notify_list_clear();
                 //read_request_list_clear();
                 //write_request_list_clear();
                 //discover_request_list_clear();
 
-                info("Bootup done");
                 for(int i = 0 ; i < OPT_ALL ; i ++){
                     if(!cmd_tab[i].bootup_handler){
                         continue;
                     }
-                    cmd_tab[i].bootup_handler(&conf);
+                    cmd_tab[i].bootup_handler(sock, &conf);
                 }
                 break;
             case gecko_evt_hardware_soft_timer_id:
@@ -173,6 +180,9 @@ int schostd_main(int argc, char *argv[])
                 }else if(cmd != OPT_IDLE && cmd == i){
                     ret = cmd_tab[i].event_handler(sock, &conf, evt);
                     if(ret == BLE_EVENT_RETURN || ret == BLE_EVENT_STOP){
+                        if(cmd_tab[i].cleanup){
+                            cmd_tab[i].cleanup(sock,  &conf);
+                        }
                         send_socket(sock, 0, 1, "", 0);
                         cmd = OPT_IDLE;
                     }
@@ -189,12 +199,10 @@ int schostd_main(int argc, char *argv[])
             }
             
             new_cmd = command.option;
-            info("Do %s Cmd Handling", cmd_tab[new_cmd].name);
             if(cmd_tab[new_cmd].single_shot){
                 cmd_tab[new_cmd].cmd_handler(sock, &command);
                 if(cmd_tab[new_cmd].cleanup){
                     cmd_tab[new_cmd].cleanup(sock, &command);
-                    info("Do %s Cleanup", cmd_tab[new_cmd].name);
                 }
                 send_socket(sock, 0, 1, "", 0);
                 cmd = OPT_IDLE;
@@ -222,6 +230,7 @@ int schostd_main(int argc, char *argv[])
                 break;
             case OPT_SET:
                 conf.set  = command.set;
+                break;
             default:
                 break;
             }
@@ -229,6 +238,7 @@ int schostd_main(int argc, char *argv[])
             if(cmd_tab[cmd].cleanup){
                 cmd_tab[cmd].cleanup(sock, &conf);
             }
+            
             ret = cmd_tab[new_cmd].cmd_handler(sock, &conf);
             if(ret == BLE_EVENT_STOP){
                 if(cmd_tab[new_cmd].cleanup){

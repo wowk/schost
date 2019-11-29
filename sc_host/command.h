@@ -9,7 +9,7 @@
 struct sock_t;
 struct gecko_cmd_packet;
 
-typedef int(*bootup_handler_cb)(struct option_args_t*);
+typedef int(*bootup_handler_cb)(struct sock_t*, struct option_args_t*);
 typedef int(*cmd_handler_cb)(struct sock_t*, struct option_args_t*);
 typedef int(*cmd_exit_cb)(struct sock_t*, struct option_args_t*);
 typedef int(*event_handler_cb)(struct sock_t* sock, struct option_args_t*, struct gecko_cmd_packet*);

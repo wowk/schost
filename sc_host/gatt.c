@@ -11,11 +11,12 @@ uint16_t curr_time_attribute;
 uint16_t local_time_attribute;
 uint16_t reference_time_attribute;
 
-static int cts_timer_handler(void* arg);
+static int cts_timer_handler(struct hw_timer_t* t);
 
 struct hw_timer_t cts_timer = {
-    .count  = 0,
+    .count  = HW_TIMER_INFINITY,
     .arg    = NULL,
+    .ret    = BLE_EVENT_IGNORE,
     .id     = CTS_TIMER_ID,
     .callback = cts_timer_handler,
     .interval = CTS_TIMER_INTERVAL,
@@ -39,7 +40,7 @@ static int find_attribute(const uint8_t* uuid, uint16_t* attr)
     return -1;
 }
 
-static int cts_timer_handler(void* arg)
+static int cts_timer_handler(struct hw_timer_t* t)
 {
     current_time_service_update();
     gecko_cmd_gatt_server_write_attribute_value(
@@ -49,16 +50,14 @@ static int cts_timer_handler(void* arg)
     gecko_cmd_gatt_server_write_attribute_value(
             reference_time_attribute, 0, 4, (uint8_t*)&reference_time_characteristic);
     
-    return 0;
+    return BLE_EVENT_IGNORE;
 }
 
-int gatt_bootup_handler(struct option_args_t* args)
+int gatt_bootup_handler(struct sock_t* sock, struct option_args_t* args)
 {
     find_attribute(ct_uuid, &curr_time_attribute);
     find_attribute(lti_uuid, &local_time_attribute);
     find_attribute(rti_uuid, &reference_time_attribute);
-    gecko_cmd_hardware_set_soft_timer(CTS_TIMER_INTERVAL, CTS_TIMER_ID, 0);
-    
     hw_timer_add(&cts_timer);
 
     return 0;
@@ -71,8 +70,7 @@ int gatt_cmd_handler(struct sock_t* sock, struct option_args_t* args)
 
 int gatt_event_handler(struct sock_t* sock, struct option_args_t* args, struct gecko_cmd_packet *evt)
 {
-    int ret = BLE_EVENT_RETURN;
-    return ret;
+    return BLE_EVENT_RETURN;
 }
 
 int gatt_cleanup(struct sock_t* sock, struct option_args_t* args)

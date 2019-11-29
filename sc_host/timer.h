@@ -6,12 +6,15 @@
 
 struct gecko_msg_hardware_soft_timer_evt_t;
 
+#define HW_TIMER_INFINITY -1
+
 struct hw_timer_t {
     uint8_t id;
     uint32_t interval;
-    uint8_t count;
-    int(*callback)(void* arg);
+    int count;
+    int(*callback)(struct hw_timer_t*);
     void* arg;
+    void* ret;
 };
 
 #ifdef __cplusplus

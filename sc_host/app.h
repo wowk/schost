@@ -15,12 +15,13 @@
 
 #include "args.h"
 #include "sock.h"
+#include <stdbool.h>
 
 enum {
+    BLE_EVENT_IGNORE,
     BLE_EVENT_STOP,
     BLE_EVENT_CONTINUE,
     BLE_EVENT_RETURN,
-    BLE_EVENT_IGNORE,
 };
 
 struct gecko_cmd_packet;
@@ -29,10 +30,15 @@ struct gecko_cmd_packet;
 extern "C" {
 #endif
 
+bool ble_is_bootup();
+void ble_system_reset();
+void ble_bootup_done();
+
 int show_cmd_handler(struct sock_t* sock, struct option_args_t* args);
 int set_cmd_handler(struct sock_t* sock, struct option_args_t* args);
 int set_cleanup(struct sock_t* sock, struct option_args_t* args);
 
+int dtm_bootup_handler(struct sock_t*, struct option_args_t* args);
 int dtm_cmd_handler(struct sock_t* sock, struct option_args_t* args);
 int dtm_event_handler(struct sock_t* sock, struct option_args_t* args, 
                         struct gecko_cmd_packet *evt);
@@ -48,7 +54,7 @@ int connect_event_handler(struct sock_t* sock, struct option_args_t* args,
                         struct gecko_cmd_packet *evt);
 int connection_cleanup(struct sock_t* sock, struct option_args_t* args);
 
-int pair_bootup_handler(struct option_args_t* args);
+int pair_bootup_handler(struct sock_t*, struct option_args_t* args);
 int pair_cmd_handler(struct sock_t* sock, struct option_args_t* args);
 int pair_event_handler(struct sock_t* sock, struct option_args_t* args, 
                         struct gecko_cmd_packet *evt);
@@ -59,7 +65,7 @@ int upgrade_event_handler(struct sock_t* sock, struct option_args_t* args,
                         struct gecko_cmd_packet* evt);
 int upgrade_cleanup(struct sock_t* sock, struct option_args_t* args);
 
-int gatt_bootup_handler(struct option_args_t* args);
+int gatt_bootup_handler(struct sock_t*, struct option_args_t* args);
 int gatt_cmd_handler(struct sock_t* sock, struct option_args_t* args);
 int gatt_event_handler(struct sock_t* sock, struct option_args_t* args, 
         struct gecko_cmd_packet *evt);

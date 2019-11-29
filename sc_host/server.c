@@ -58,7 +58,7 @@ int schostd_main(int argc, char *argv[])
      * Once the chip successfully boots, gecko_evt_system_boot_id 
      * event should be received. 
      * ************************************************************/
-    gecko_cmd_system_reset(0);
+    ble_system_reset(0);
     
     debug(conf.debug, "Starting up...\n");
     debug(conf.debug, "Resetting NCP target...");

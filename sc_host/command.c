@@ -42,6 +42,7 @@ struct cmd_table_t cmd_tab[OPT_ALL] = {
     [OPT_DTM]     = {
         .name = "DTM",
         .single_shot = false, 
+        .bootup_handler = dtm_bootup_handler,
         .cmd_handler = dtm_cmd_handler,     
         .event_handler = dtm_event_handler,
         .cleanup     = dtm_cleanup,
