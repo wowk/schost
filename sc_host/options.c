@@ -604,10 +604,10 @@ int parse_args(int argc, char** argv, struct option_args_t* args)
                 //printf("dtm.%s\n", options[option_index].name);
                 if(op == 0 && !strcmp("rx", options[option_index].name)){
                     args->dtm.rx.on = 1;
-                    sub_opt_status[++sub_opt_index] = OPT_RX;
+                    sub_opt_status[++sub_opt_index] = OPT_DTM_RX;
                 }else if(op == 0 && !strcmp("tx", options[option_index].name)){
                     args->dtm.tx.on = 1;
-                    sub_opt_status[++sub_opt_index] = OPT_TX;
+                    sub_opt_status[++sub_opt_index] = OPT_DTM_TX;
                 }else{
                     sub_opt_index --;
                     continue;
@@ -615,7 +615,7 @@ int parse_args(int argc, char** argv, struct option_args_t* args)
             }
 
             /* parse dtm.rx's sub option */
-            else if(sub_opt_status[sub_opt_index] == OPT_RX){
+            else if(sub_opt_status[sub_opt_index] == OPT_DTM_RX){
                 //printf("rx.%s\n", options[option_index].name);
                 if(op == 0 && !strcmp("delay", options[option_index].name)){
                     //printf("found delay\n");
@@ -636,7 +636,7 @@ int parse_args(int argc, char** argv, struct option_args_t* args)
             }
         
             /* parse dtm.tx's sub option */
-            else if(sub_opt_status[sub_opt_index] == OPT_TX){
+            else if(sub_opt_status[sub_opt_index] == OPT_DTM_TX){
                 //printf("tx\n");
                 if(op == 0 && !strcmp("delay", options[option_index].name)){
                     parse_int(optarg, &value, 0, INT_MAX, "dtm.tx.delay");

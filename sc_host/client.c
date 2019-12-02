@@ -1,17 +1,23 @@
+#include "debug.h"
+#include "sock.h"
+#include "timer.h"
+#include "options.h"
+#include "headers.h"
 
 
 int schost_main(int argc, char* argv[])
 {
-    char buffer[512] = "";
-    struct option_args_t args;
+    char buffer[512];
+    struct sock_t* sock;
+    struct option_args_t command;
     
-    if(0 > parse_args(argc, argv, &args)){
+    if(0 > parse_args(argc, argv, &command)){
         error(1, EINVAL, "failed to parse args");
     }
-
+ 
     unlink(SCHOST_CLIENT_USOCK);
-    
-    struct sock_t* sock = create_socket(AF_LOCAL, SOCK_DGRAM, 0);
+
+    sock = create_socket(AF_LOCAL, SOCK_DGRAM, 0);
     if(!sock){
         error(1, errno, "failed to create socket for sc_host");
     }
@@ -20,9 +26,9 @@ int schost_main(int argc, char* argv[])
         error(1, errno, "failed bind to sc_host");
     } 
 
-    socket_addr(&sock->daddr, AF_LOCAL, SCHOST_CLIENT_USOCK, 0, &sock->socklen);
+    socket_addr(&sock->daddr, AF_LOCAL, SCHOST_SERVER_USOCK, 0, &sock->socklen);
 
-    if(0 > send_socket(sock, 0, 1, &args, sizeof(args))){
+    if(0 > send_socket(sock, 0, 1, &command, sizeof(command))){
         error(1, errno, "failed to send command to schostd");
     }
 
@@ -46,5 +52,3 @@ int schost_main(int argc, char* argv[])
     
     return 0;
 }
-
-

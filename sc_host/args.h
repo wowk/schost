@@ -12,13 +12,20 @@ enum option_e {
     OPT_PAIR,
     OPT_UPGRADE,
     OPT_GATT,
+        OPT_GATT_NOTIFY,
+        OPT_GATT_READ,
+        OPT_GATT_WRITE,
     OPT_DTM,
-        OPT_TX,
-        OPT_RX, 
+        OPT_DTM_TX,
+        OPT_DTM_RX, 
     OPT_IDLE,
     OPT_ALL,
 };
 
+struct uint8array {
+    uint8_t size;
+    uint8_t* value;
+};
 
 struct dev_arg_t {
     char name[32];
@@ -98,14 +105,26 @@ struct set_arg_t {
     uint8_t name[64];
 };
 
-struct gatt_arg_t {
-    uint8_t connid;
-    uint16_t read_uuid;
-    uint16_t write_uuid;
-    uint16_t notify_uuid;
-    uint8_t* value;
-    uint8_t len;
+struct read_arg_t {
+    uint8_t connection;
+    struct uint8array value;
+};
 
+struct write_arg_t {
+    uint8_t connection;
+    struct uint8array value;
+};
+
+struct notify_arg_t {
+    uint8_t connection;
+    uint16_t characteristic;
+    struct uint8array value;
+};
+
+struct gatt_arg_t {
+    struct notify_arg_t notify;
+    struct write_arg_t write;
+    struct read_arg_t read;
 };
 
 struct option_args_t {
@@ -122,7 +141,6 @@ struct option_args_t {
     uint8_t option;
 	uint8_t debug;
 };
-
 
 
 #endif

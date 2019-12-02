@@ -1,38 +1,37 @@
 #include "cts.h"
+#include "ans.h"
+#include "hps.h"
+#include "ess.h"
 #include "gatt.h"
 #include "timer.h"
 #include "headers.h"
-
-#define CTS_TIMER_ID        0x30
-#define CTS_TIMER_INTERVAL  1.0f
+#include "host_gecko.h"
 
 
-uint16_t curr_time_attribute;
-uint16_t local_time_attribute;
-uint16_t reference_time_attribute;
+#define GATT_TIMER_ID        0x30
+#define GATT_TIMER_INTERVAL  1.0f
 
-static int cts_timer_handler(struct hw_timer_t* t);
+static int gatt_timer_handler(struct hw_timer_t* t);
 
-struct hw_timer_t cts_timer = {
+struct hw_timer_t gatt_timer = {
     .count  = HW_TIMER_INFINITY,
     .arg    = NULL,
     .ret    = BLE_EVENT_IGNORE,
-    .id     = CTS_TIMER_ID,
-    .callback = cts_timer_handler,
-    .interval = CTS_TIMER_INTERVAL,
+    .id     = GATT_TIMER_ID,
+    .callback = gatt_timer_handler,
+    .interval = GATT_TIMER_INTERVAL,
 };
 
-static int find_attribute(const uint8_t* uuid, uint16_t* attr)
+int gatt_find_attribute(const uint8_t* uuid, uint16_t* attr)
 {
     struct gecko_msg_gatt_server_find_attribute_rsp_t* attrrsp;
     
     attrrsp = gecko_cmd_gatt_server_find_attribute(0, 2, uuid);
     if(!attrrsp){
-        info("failed to get attr response");
+        error(0, EINVAL, "failed to get attr response");
     }else if(attrrsp->result){
-        info("result: %s(%.4x)\n", error_summary(attrrsp->result), attrrsp->result);
+        error(0, EINVAL, "result: %s(%.4x)\n", error_summary(attrrsp->result), attrrsp->result);
     }else{
-        info("attribute: %.4x", attrrsp->attribute);
         *attr = attrrsp->attribute;
         return 0;
     }
@@ -40,25 +39,39 @@ static int find_attribute(const uint8_t* uuid, uint16_t* attr)
     return -1;
 }
 
-static int cts_timer_handler(struct hw_timer_t* t)
+int gatt_find_attributes(struct gatt_attr_t* gas, int size)
 {
-    current_time_service_update();
-    gecko_cmd_gatt_server_write_attribute_value(
-            curr_time_attribute, 0, 10, (uint8_t*)&curr_time_characteristic);
-    gecko_cmd_gatt_server_write_attribute_value(
-            local_time_attribute, 0, 2, (uint8_t*)&local_time_characteristic);
-    gecko_cmd_gatt_server_write_attribute_value(
-            reference_time_attribute, 0, 4, (uint8_t*)&reference_time_characteristic);
-    
+    for(int i = 0 ; i < size ; i ++){
+        gatt_find_attribute((uint8_t*)&gas[i].uuid, &gas[i].attr);
+        info("UUID(%.4X) : ATTR(%.4X)", gas[i].uuid, gas[i].attr);
+    }
+
+    return 0;
+}
+
+void gatt_write_attribute(uint16_t attr, uint16_t offset, uint8_t value_len, uint8_t* value)
+{
+    gecko_cmd_gatt_server_write_attribute_value(attr, offset, value_len, value);
+}
+
+static int gatt_timer_handler(struct hw_timer_t* t)
+{
+    current_time_service_timer();
+    alert_notification_service_timer();
+    environment_sensing_service_timer();
+    http_proxy_service_timer();
+
     return BLE_EVENT_IGNORE;
 }
 
 int gatt_bootup_handler(struct sock_t* sock, struct option_args_t* args)
 {
-    find_attribute(ct_uuid, &curr_time_attribute);
-    find_attribute(lti_uuid, &local_time_attribute);
-    find_attribute(rti_uuid, &reference_time_attribute);
-    hw_timer_add(&cts_timer);
+    hw_timer_add(&gatt_timer);
+
+    current_time_service_init();
+    alert_notification_service_init();
+    environment_sensing_service_init();
+    http_proxy_service_init();
 
     return 0;
 }

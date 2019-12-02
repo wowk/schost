@@ -123,10 +123,8 @@ void hw_timer_list_update(struct gecko_msg_hardware_soft_timer_evt_t* evt)
             }else{
                 elem->hw_timer->ret = (void*)elem->hw_timer->callback(elem->hw_timer);
             }
-            info("ID: %d\n", elem->hw_timer->id);
             break;
         }
-        info("ID1: %d\n", elem->hw_timer->id);
     }
 
     if(deleted){

@@ -3,24 +3,22 @@
 
 #include <stdint.h>
 
-//0x00, 0x00, 0x2a, 0x14, 0x00, 0x00, 0x10, 0x00,
-//0x80, 0x00, 0x00, 0x80, 0x5f, 0x9b, 0x34, 0xfb
+#ifdef __cplusplus
+extern "C"
+#endif
 
-static const uint8_t cts_uuid[] = {
-    0x05, 0x18
+struct gatt_attr_t {
+    uint16_t uuid;
+    uint16_t attr;
 };
 
-static const uint8_t ct_uuid[] = {
-    0x2b, 0x2a
-};
+int gatt_find_attribute(const uint8_t* uuid, uint16_t* attr);
+int gatt_find_attributes(struct gatt_attr_t* gas, int size);
+void gatt_write_attribute(uint16_t attr, uint16_t offset, uint8_t value_len, uint8_t* value);
 
-static const uint8_t lti_uuid[] = {
-    0x0f, 0x2a
-};
-
-static const uint8_t rti_uuid[] = {
-    0x14, 0x2a
-};
+#ifdef __cplusplus
+}
+#endif
 
 
 #endif
