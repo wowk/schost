@@ -39,6 +39,16 @@ struct hw_timer_t discover_timer = {
     .callback   = discover_timer_handler,
 };
 
+
+static uint16_t to_uuid16(uint8array* uuid)
+{
+	uint16_t val;
+	
+	val = (uuid->data[2] << 8) + uuid->data[3];
+
+	return val;
+}
+
 struct discover_request_t* discover_request_get()
 {
     struct discover_request_elem_t* elem;
@@ -140,7 +150,7 @@ static int discover_timer_handler(struct hw_timer_t* t)
     
     req = discover_request_get();
     if(!req){
-        return;
+        return BLE_EVENT_CONTINUE;
     }
 
     switch(req->type){
