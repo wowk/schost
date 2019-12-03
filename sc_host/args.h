@@ -2,6 +2,8 @@
 #define ARGS_H__
 
 #include <stdint.h>
+#include <limits.h>
+
 
 enum option_e {
     OPT_DEV,
@@ -19,12 +21,13 @@ enum option_e {
         OPT_DTM_TX,
         OPT_DTM_RX, 
     OPT_IDLE,
+    OPT_DISCOVER,
     OPT_ALL,
 };
 
 struct uint8array {
     uint8_t size;
-    uint8_t* value;
+    uint8_t value[UINT8_MAX];
 };
 
 struct dev_arg_t {
@@ -106,22 +109,21 @@ struct set_arg_t {
 };
 
 struct read_arg_t {
-    uint8_t connection;
-    struct uint8array value;
+    uint8_t len;
 };
 
 struct write_arg_t {
-    uint8_t connection;
     struct uint8array value;
 };
 
 struct notify_arg_t {
-    uint8_t connection;
-    uint16_t characteristic;
     struct uint8array value;
 };
 
 struct gatt_arg_t {
+    uint8_t option;
+    uint16_t connection;
+    uint16_t uuid;
     struct notify_arg_t notify;
     struct write_arg_t write;
     struct read_arg_t read;

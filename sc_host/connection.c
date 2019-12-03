@@ -12,6 +12,9 @@
 #include "args.h"
 #include "sock.h"
 #include "connection.h"
+#include "discover.h"
+
+
 
 struct connection_elem_t {
     struct connection_t conn;
@@ -44,6 +47,8 @@ int connection_opened(struct gecko_msg_le_connection_opened_evt_t* evt)
     conn->address    = evt->address;
     conn->used = true;
     info("connection opened: %u", conn->connection);
+   
+    discover_services(conn->connection);
 
     return 0;
 }

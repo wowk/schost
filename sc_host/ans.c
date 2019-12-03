@@ -21,7 +21,7 @@ struct gatt_attr_t ans_attrs[] = {
 
 void alert_notification_service_init()
 {
-    gatt_find_attributes(ans_attrs, ANS_ATTR_MAX);
+    gatt_find_local_attributes(ans_attrs, ANS_ATTR_MAX);
 
 }
 

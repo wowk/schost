@@ -22,7 +22,7 @@ struct gatt_attr_t hps_attrs[] = {
 
 void http_proxy_service_init()
 {
-    gatt_find_attributes(hps_attrs, HPS_ATTR_MAX);
+    gatt_find_local_attributes(hps_attrs, HPS_ATTR_MAX);
 }
 
 void http_proxy_service_timer()

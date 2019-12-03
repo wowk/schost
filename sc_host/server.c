@@ -181,6 +181,9 @@ int schostd_main(int argc, char *argv[])
             case OPT_SET:
                 conf.set  = command.set;
                 break;
+            case OPT_GATT:
+                conf.gatt = command.gatt;
+                break;
             default:
                 break;
             }

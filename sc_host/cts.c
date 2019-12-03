@@ -69,7 +69,7 @@ struct reference_time_information_characteristic reference_time_characteristic;
 
 void current_time_service_init()
 {
-    gatt_find_attributes(cts_attrs, CTS_ATTR_MAX);
+    gatt_find_local_attributes(cts_attrs, CTS_ATTR_MAX);
 }
 
 void current_time_service_timer()
@@ -97,11 +97,11 @@ void current_time_service_timer()
     curr_time_characteristic.day_of_week = tm_st.tm_wday;
     curr_time_characteristic.adjust_reason = 0;
 
-    gatt_write_attribute(cts_attrs[CTS_ATTR_CT].attr, 0, 
+    gatt_write_local_attribute(cts_attrs[CTS_ATTR_CT].attr,
             sizeof(curr_time_characteristic), (uint8_t*)&curr_time_characteristic);
-    gatt_write_attribute(cts_attrs[CTS_ATTR_LTI].attr, 0,
+    gatt_write_local_attribute(cts_attrs[CTS_ATTR_LTI].attr,
             sizeof(local_time_characteristic), (uint8_t*)&local_time_characteristic);
-    gatt_write_attribute(cts_attrs[CTS_ATTR_RTI].attr, 0,
+    gatt_write_local_attribute(cts_attrs[CTS_ATTR_RTI].attr,
             sizeof(reference_time_characteristic), (uint8_t*)&reference_time_characteristic);
 }
 

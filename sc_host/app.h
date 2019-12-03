@@ -71,6 +71,13 @@ int gatt_event_handler(struct sock_t* sock, struct option_args_t* args,
         struct gecko_cmd_packet *evt);
 int gatt_cleanup(struct sock_t* sock, struct option_args_t* args);
 
+
+int discover_bootup_handler(struct sock_t*, struct option_args_t* args);
+int discover_cmd_handler(struct sock_t* sock, struct option_args_t* args);
+int discover_event_handler(struct sock_t* sock, struct option_args_t* args, 
+        struct gecko_cmd_packet* evt);
+int discover_cleanup(struct sock_t*, struct option_args_t* args);
+
 #ifdef __cplusplus
 };
 #endif

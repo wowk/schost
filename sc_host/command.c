@@ -64,6 +64,15 @@ struct cmd_table_t cmd_tab[OPT_ALL] = {
         .event_handler = gatt_event_handler,
         .cleanup = gatt_cleanup,
     },
+
+    [OPT_DISCOVER] = {
+        .name = "DISCOVER",
+        .single_shot = false,
+        .bootup_handler = discover_bootup_handler,
+        .cmd_handler    = discover_cmd_handler,
+        .event_handler  = discover_event_handler,
+        .cleanup = discover_cleanup,
+    },
 }; 
 
 

@@ -81,10 +81,10 @@ static struct option options[] = {
 
     {"gatt",            no_argument,        0, 0},
         {"connid",      required_argument,  0, 0},
-        {"read",        required_argument,  0, 0},
+        {"uuid",        required_argument,  0, 0},
+        {"read",        no_argument,        0, 0},
         {"write",       required_argument,  0, 0},
         {"notify",      required_argument,  0, 0},
-        {"value",       required_argument,  0, 0},
 
     /* dev sub options */
     {"dev",             no_argument,        0, 0},
@@ -97,6 +97,31 @@ static struct option options[] = {
     /* end */
     {0, 0, 0, 0},
 };
+
+#define xdigit(c)  (c <= '9' ? (c-'0') : ((c|0x20)-'a'+10))
+
+static int parse_hex(char* s, struct uint8array* arr, const char* name)
+{
+    int index = 0;
+    size_t size = strlen(s);
+    
+    arr->size = (size + 1)>>1;
+    if(arr->size > UINT8_MAX){
+        arr->size = UINT8_MAX;
+    }
+
+    if((size&1) == 1){
+        arr->value[index++] = xdigit(*s);
+        s++;
+    }
+
+    for(int i = index ; i < arr->size ; i ++){
+        arr->value[i] = (xdigit(*s)<<4) + xdigit(*(s+1));
+        s += 2;
+    }
+    
+    return size;
+}
 
 static int parse_int(char* s, long* value, long min, long max, const char* name)
 {
@@ -472,6 +497,9 @@ int parse_args(int argc, char** argv, struct option_args_t* args)
     args->scan.timeout     = 10;
     args->scan.phy         = le_gap_phy_1m;
 
+    args->gatt.connection = (uint16_t)0x100;
+    args->gatt.option     = 0xFF;
+
     int sub_opt_index = 0;
     enum option_e sub_opt_status[16];
     sub_opt_status[0] = OPT_ALL;
@@ -504,6 +532,9 @@ int parse_args(int argc, char** argv, struct option_args_t* args)
                 }else if(op == 0 && !strcmp("connect", options[option_index].name)){
                     args->option = sub_opt_status[++sub_opt_index] = OPT_CONNECT;
 
+                }else if(op == 0 && !strcmp("gatt", options[option_index].name)){
+                    args->option = sub_opt_status[++sub_opt_index] = OPT_GATT;
+                
                 }else if(op == 0 && !strcmp("debug", options[option_index].name)){
                     args->debug = 1;
 
@@ -714,27 +745,34 @@ int parse_args(int argc, char** argv, struct option_args_t* args)
 
             /* parse gatt's sub option */
             else if ( sub_opt_status[sub_opt_index] == OPT_GATT ) {
-                if ( op == 0 && !strcmp("name", options[option_index].name) ) {
-                    //snprintf(args->dev.name, sizeof(args->gatt.name), "%s", optarg);
-                } else if ( op == 0 && !strcmp("baudrate", options[option_index].name) ) {
-                    parse_int(optarg, &value, 0, INT_MAX, "baudrate");
-                    args->dev.baudrate = (uint32_t)value;
-                } else if ( op == 0 && !strcmp("flowctrl", options[option_index].name) ) {
-                    parse_int(optarg, &value, 0, INT_MAX, "flowctrl");
-                    args->dev.flowctrl = (uint32_t)value;
-                } else if ( op == 0 && !strcmp("timeout", options[option_index].name) ) {
-                    parse_int(optarg, &value, 0, INT_MAX, "timeout");
-                    args->dev.timeout = (uint32_t)value;
-                } else if ( op == 0 && !strcmp("txpwr", options[option_index].name) ) {
-                    parse_float(optarg, &dvalue, -100000.0, 100000.0, "dev.txpwr");
-                    args->dev.txpwr = (float)dvalue;
+                if ( op == 0 && !strcmp("read", options[option_index].name) ) {
+                    args->gatt.option = OPT_GATT_READ;
+                
+                } else if ( op == 0 && !strcmp("notify", options[option_index].name) ) {
+                    args->gatt.option = OPT_GATT_NOTIFY;
+                    parse_hex(optarg, &args->gatt.notify.value, "gatt.notify.value");
+                
+                } else if ( op == 0 && !strcmp("write", options[option_index].name) ) {
+                    args->gatt.option = OPT_GATT_WRITE;
+                    parse_hex(optarg, &args->gatt.write.value, "gatt.write.value");
+                
+                } else if ( op == 0 && !strcmp("connid", options[option_index].name) ) {
+                    parse_int(optarg, &value, 0, UINT8_MAX, "gatt.connid");
+                    args->gatt.connection = (uint16_t)value;
+
+                } else if ( op == 0 && !strcmp("uuid", options[option_index].name) ) {
+                    parse_int(optarg, &value, 0, UINT16_MAX, "gatt.uuid");
+                    args->gatt.uuid = (uint16_t)value;
+                
                 } else {
                     sub_opt_index --;
                     continue;
                 }
+
+            } else {
+                //sub_opt_index --;
+                //continue;
             }
-
-
 #if 0
     {"gatt",            no_argument,        0, 0},
         {"connid",      required_argument,  0, 0},

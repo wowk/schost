@@ -52,7 +52,7 @@ struct gatt_attr_t ess_attrs[] = {
 
 void environment_sensing_service_init()
 {
-    gatt_find_attributes(ess_attrs, ESS_ATTR_MAX);
+    gatt_find_local_attributes(ess_attrs, ESS_ATTR_MAX);
 }
 
 void environment_sensing_service_timer()

@@ -154,7 +154,8 @@ pair.c upgrade.c dtm.c \
 cts.c timer.c gatt.c \
 scan.c options.c connection.c \
 command.c neigh.c app.c \
-server.c client.c hps.c ans.c ess.c
+server.c client.c hps.c ans.c ess.c \
+discover.c
 
 # this file should be the last added
 ifeq ($(OS),posix)

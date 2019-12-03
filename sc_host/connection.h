@@ -2,6 +2,7 @@
 #define BLE_CONNECTION_H_
 
 #include "host_gecko.h"
+#include <service.h>
 #include <stdint.h>
 
 struct connection_t {
@@ -13,6 +14,7 @@ struct connection_t {
     uint8_t bonding;
     uint8_t advertiser;
     uint8_t reason;
+    struct service_t* service;
 };
 
 #ifdef __cplusplus
