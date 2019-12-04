@@ -31,6 +31,12 @@ struct cmd_table_t cmd_tab[OPT_ALL] = {
         .cmd_handler = connect_cmd_handler, 
     },
     
+    [OPT_CONNECTION] = {
+        .name = "CONNECTION",
+        .single_shot = true, 
+        .cmd_handler = connection_cmd_handler, 
+    },
+    
     [OPT_SCAN]    = {
         .name = "SCAN",
         .single_shot = false, 

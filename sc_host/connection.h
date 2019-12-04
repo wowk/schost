@@ -4,6 +4,8 @@
 #include "host_gecko.h"
 #include <service.h>
 #include <stdint.h>
+#include <stdbool.h>
+
 
 struct connection_t {
     bool    used;
@@ -14,7 +16,8 @@ struct connection_t {
     uint8_t bonding;
     uint8_t advertiser;
     uint8_t reason;
-    struct service_t* service;
+    struct service_list_t service_list;
+    struct characteristic_list_t characteristic_list;
 };
 
 #ifdef __cplusplus

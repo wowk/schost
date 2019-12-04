@@ -4,6 +4,8 @@
 #include "debug.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <host_gecko.h>
+
 
 #define BLE_INFO       "/tmp/ble/"
 #define BLE_VERSION    BLE_INFO"version"
@@ -13,6 +15,13 @@
 #define BLE_CONNECTION BLE_INFO"connection"
 #define BLE_DEVNAME    BLE_INFO"devname"
 
+#define Free(p) do{\
+    info("Free Here 0x%p\n", p);\
+    free(p);\
+}while(0)
+
+
+extern uint16_t to_uuid16(uint8array* uuid);
 extern char* btaddr2str(void* addr,  char* buf);
 extern void* str2btaddr(char* str, void* buf);
 extern void echo(int append, const char* file, const char* format, ...);

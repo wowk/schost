@@ -11,6 +11,8 @@
 #include <netinet/ether.h>
 #include "host_gecko.h"
 #include "options.h"
+#include <arpa/inet.h>
+
 
 
 static struct option options[] = {
@@ -74,6 +76,11 @@ static struct option options[] = {
         {"addrtype",    required_argument,  0, 0},
         {"initphy",     required_argument,  0, 0},
         {"select",      no_argument,        0, 0},
+    
+    {"connection",      no_argument,        0, 0},
+        {"list",        no_argument,        0, 0},
+        {"disconn",     required_argument,  0, 0},
+        {"characteristic",optional_argument,0, 0},
 
     /* upgrade BT firmware */
     {"upgrade",         no_argument,        0, 0},
@@ -499,7 +506,7 @@ int parse_args(int argc, char** argv, struct option_args_t* args)
 
     args->gatt.connection = (uint16_t)0x100;
     args->gatt.option     = 0xFF;
-
+    
     int sub_opt_index = 0;
     enum option_e sub_opt_status[16];
     sub_opt_status[0] = OPT_ALL;
@@ -531,6 +538,9 @@ int parse_args(int argc, char** argv, struct option_args_t* args)
 
                 }else if(op == 0 && !strcmp("connect", options[option_index].name)){
                     args->option = sub_opt_status[++sub_opt_index] = OPT_CONNECT;
+
+                }else if(op == 0 && !strcmp("connection", options[option_index].name)){
+                    args->option = sub_opt_status[++sub_opt_index] = OPT_CONNECTION;
 
                 }else if(op == 0 && !strcmp("gatt", options[option_index].name)){
                     args->option = sub_opt_status[++sub_opt_index] = OPT_GATT;
@@ -567,6 +577,26 @@ int parse_args(int argc, char** argv, struct option_args_t* args)
                     args->connect.disconn = value;
                 }else if(op == 0 && !strcmp("list", options[option_index].name)){
                     args->connect.show = 1;
+                }else{
+                    sub_opt_index --;
+                    continue;
+                }
+            }
+
+            /* parse connection's sub option */
+            else if(sub_opt_status[sub_opt_index] == OPT_CONNECTION) {
+                if(op == 0 && !strcmp("disconn", options[option_index].name)){
+                    parse_int(optarg, &value, 0, UINT8_MAX, "connection.disconn");
+                    args->connection.disconn = (uint8_t)value;
+                }else if(op == 0 && !strcmp("list", options[option_index].name)){
+                    args->connection.list = 1;
+                }else if(!strcmp("characteristic", options[option_index].name)){
+                    if(optarg){
+                        parse_int(optarg, &value, 0, UINT8_MAX, "connection.characteristic");
+                        args->connection.characteristic = (uint8_t)value;
+                    }else{
+                        args->connection.characteristic = 0x100;
+                    }
                 }else{
                     sub_opt_index --;
                     continue;
@@ -762,7 +792,7 @@ int parse_args(int argc, char** argv, struct option_args_t* args)
 
                 } else if ( op == 0 && !strcmp("uuid", options[option_index].name) ) {
                     parse_int(optarg, &value, 0, UINT16_MAX, "gatt.uuid");
-                    args->gatt.uuid = (uint16_t)value;
+                    args->gatt.uuid = htons((uint16_t)value);
                 
                 } else {
                     sub_opt_index --;

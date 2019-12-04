@@ -9,6 +9,7 @@ enum option_e {
     OPT_DEV,
     OPT_SCAN,
     OPT_CONNECT,
+    OPT_CONNECTION,
     OPT_SHOW,
     OPT_SET,
     OPT_PAIR,
@@ -47,7 +48,7 @@ struct scan_arg_t {
     uint32_t interval;
 };
 
-struct conn_arg_t {
+struct connect_arg_t {
     uint8_t on;
     uint8_t address[18];
     uint8_t addrtype;
@@ -56,6 +57,13 @@ struct conn_arg_t {
     uint32_t min_interval;
     uint8_t show;
     uint8_t disconn;
+};
+
+struct connection_arg_t {
+    uint8_t on;
+    uint8_t disconn;
+    uint8_t list;
+    uint16_t characteristic;
 };
 
 struct pair_arg_t {
@@ -133,7 +141,8 @@ struct option_args_t {
     struct dev_arg_t dev;
     struct scan_arg_t scan;
     struct pair_arg_t pair;
-    struct conn_arg_t connect;
+    struct connect_arg_t connect;
+    struct connection_arg_t connection;
     struct show_arg_t show;
     struct upgrade_arg_t upgrade;
     struct set_arg_t set;

@@ -3,10 +3,13 @@
 #include <util.h>
 #include <timer.h>
 #include <sys/queue.h>
+#include <service.h>
 #include <discover.h>
+#include <connection.h>
+
 
 #define DISCOVER_TIMER_ID 0x50
-#define DISCOVER_INTERVAL 5.0f
+#define DISCOVER_INTERVAL 1.0f
 
 struct discover_request_elem_t {
     struct discover_request_t req;
@@ -39,16 +42,6 @@ struct hw_timer_t discover_timer = {
     .callback   = discover_timer_handler,
 };
 
-
-static uint16_t to_uuid16(uint8array* uuid)
-{
-	uint16_t val;
-	
-	val = (uuid->data[2] << 8) + uuid->data[3];
-
-	return val;
-}
-
 struct discover_request_t* discover_request_get()
 {
     struct discover_request_elem_t* elem;
@@ -65,11 +58,15 @@ void discover_request_free_head()
 {
     struct discover_request_elem_t* elem;
     
+    if(STAILQ_EMPTY(&discover_request_queue)){
+        return;
+    }
+
     elem = STAILQ_FIRST(&discover_request_queue);
     STAILQ_REMOVE_HEAD(&discover_request_queue, entry);
     
     if(elem){
-        free(elem);
+        Free(elem);
     }
 }
 
@@ -83,7 +80,7 @@ void discover_request_queue_clear()
             break;
         }
         STAILQ_REMOVE(&discover_request_queue, elem, discover_request_elem_t, entry);
-        free(elem);
+        Free(elem);
     }
 }
 
@@ -162,8 +159,9 @@ static int discover_timer_handler(struct hw_timer_t* t)
         }
         break;
     case DISCOVER_DESCRIPTORS:
-        info("Find Service 2\n");
-        gecko_cmd_gatt_discover_descriptors(req->connection, req->characteristic);
+        //info("Find Service 2\n");
+        //we dont want to support this because of no demands
+        //gecko_cmd_gatt_discover_descriptors(req->connection, req->characteristic);
         break;
     case DISCOVER_CHARACTERISTIC:
         info("Find Service 3\n");
@@ -194,28 +192,58 @@ int discover_cmd_handler(struct sock_t* sock, struct option_args_t* args)
 
 int discover_event_handler(struct sock_t* sock, struct option_args_t* args, struct gecko_cmd_packet* evt)
 {
+    struct connection_t* conn;
+    struct service_t* service;
+    struct characteristic_t* character;
     struct gecko_msg_gatt_service_evt_t* service_evt;
     struct gecko_msg_gatt_characteristic_evt_t* character_evt;
     struct gecko_msg_gatt_descriptor_evt_t* descriptor_evt;
-
+    
     switch(BGLIB_MSG_ID(evt->header)){
     case gecko_evt_gatt_procedure_completed_id:
         discover_request_free_head();
         break;
+
     case gecko_evt_gatt_descriptor_id:
         info("discover desc evt");
         descriptor_evt = &evt->data.evt_gatt_descriptor;
-
+        conn = connection_find_by_conn(descriptor_evt->connection);
+        if(!conn){
+            return BLE_EVENT_IGNORE;
+        }
+        character = characteristic_find_by_uuid(&conn->characteristic_list, to_uuid16(&descriptor_evt->uuid));
+        if(!character){
+            return BLE_EVENT_IGNORE;
+        }
+        descriptor_set(character, descriptor_evt);
         break;
+
     case gecko_evt_gatt_service_id:
         service_evt = &evt->data.evt_gatt_service;
+        conn = connection_find_by_conn(service_evt->connection);
+        if(!conn){
+            return BLE_EVENT_IGNORE;
+        }
+        service_add(&conn->service_list, service_evt);
         discover_characteristics(service_evt->connection, service_evt->service);
+        info("discover service evt");
         break;
+
     case gecko_evt_gatt_characteristic_id:
         character_evt = &evt->data.evt_gatt_characteristic;
-        discover_descriptors(character_evt->connection, character_evt->characteristic);
+        conn = connection_find_by_conn(character_evt->connection);
+        if(!conn){
+            return BLE_EVENT_IGNORE;
+        }
+        service = service_find_by_handle(&conn->service_list, discover_request_get()->service);
+        if(!service){
+            return BLE_EVENT_IGNORE;
+        }
+        characteristic_add(service, &conn->characteristic_list, character_evt);
+        //discover_descriptors(character_evt->connection, character_evt->characteristic);
         info("discover characteristic evt");
         break;
+
     default:
         break;
     }

@@ -7,6 +7,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <netinet/ether.h>
+#include <host_gecko.h>
 
 
 #define swap(a, b) do{\
@@ -14,6 +15,19 @@
     b = a;\
     a = tmp;\
 }while(0)
+
+uint16_t to_uuid16(uint8array* uuid)
+{
+	uint16_t val;
+    if(uuid->len == 16){
+	    val = (uuid->data[2] << 8) + uuid->data[3];
+    }else{
+        val = (uuid->data[0]<<8) + uuid->data[1];
+    }
+
+	return val;
+}
+
 
 char* btaddr2str(void* addr,  char* buf)
 {

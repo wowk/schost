@@ -52,7 +52,8 @@ int scan_cleanup(struct sock_t* sock, struct option_args_t* args);
 int connect_cmd_handler(struct sock_t* sock, struct option_args_t* args);
 int connect_event_handler(struct sock_t* sock, struct option_args_t* args, 
                         struct gecko_cmd_packet *evt);
-int connection_cleanup(struct sock_t* sock, struct option_args_t* args);
+
+int connection_cmd_handler(struct sock_t* sock, struct option_args_t* args);
 
 int pair_bootup_handler(struct sock_t*, struct option_args_t* args);
 int pair_cmd_handler(struct sock_t* sock, struct option_args_t* args);
