@@ -44,6 +44,11 @@ int connection_opened(struct gecko_msg_le_connection_opened_evt_t* evt)
         conn = &conn_elem->conn;
         LIST_INSERT_HEAD(&connection_list, conn_elem, entry);
     }
+    
+    LIST_INIT(&conn->service_list);
+    LIST_INIT(&conn->characteristic_list);
+    LIST_INIT(&conn->descriptor_list);
+
     conn->connection = evt->connection;
     conn->master     = evt->master;
     conn->bonding    = evt->bonding;
@@ -70,6 +75,7 @@ int connection_closed(uint8_t connid, uint16_t reason)
     conn->reason = reason;
     service_clean(&conn->service_list);
     characteristic_clean(&conn->characteristic_list);
+    descriptor_clean(&conn->descriptor_list);
 
     info("connection closed");
     
@@ -237,9 +243,9 @@ static int connection_characteristic_dump(struct connection_t* conn, void* args)
     printf_socket(cva->sock, "       ServiceUUID CharacteristicUUID  Properity", 
             conn->connection, address, conn->addrtype);
     LIST_FOREACH(character, &conn->characteristic_list, entry){
-        printf_socket(cva->sock, "       %.4X        %.4X                %s", 
+        printf_socket(cva->sock, "       %.4X        %.4X                %.2X:%s", 
                 htons(character->service->uuid), htons(character->uuid), 
-                property2str(character->properties, prop_buf));
+                character->properties, property2str(character->properties, prop_buf));
     }
 
     return 0;

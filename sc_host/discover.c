@@ -153,7 +153,7 @@ static int discover_timer_handler(struct hw_timer_t* t)
     switch(req->type){
     case DISCOVER_SERVICES:
         result = gecko_cmd_gatt_discover_primary_services(req->connection)->result;
-        info("Find Service\n");
+        //info("Find Service\n");
         if(result){
             info("error: %s(%d)\n", error_summary(result), result);
         }
@@ -161,14 +161,14 @@ static int discover_timer_handler(struct hw_timer_t* t)
     case DISCOVER_DESCRIPTORS:
         //info("Find Service 2\n");
         //we dont want to support this because of no demands
-        //gecko_cmd_gatt_discover_descriptors(req->connection, req->characteristic);
+        gecko_cmd_gatt_discover_descriptors(req->connection, req->characteristic);
         break;
     case DISCOVER_CHARACTERISTIC:
-        info("Find Service 3\n");
+        //info("Find Service 3\n");
         gecko_cmd_gatt_discover_characteristics(req->connection, req->service);
         break;
     default:
-        info("Find Service 4\n");
+        //info("Find Service 4\n");
         break;
     }
 
@@ -192,13 +192,17 @@ int discover_cmd_handler(struct sock_t* sock, struct option_args_t* args)
 
 int discover_event_handler(struct sock_t* sock, struct option_args_t* args, struct gecko_cmd_packet* evt)
 {
+    uint16_t vvv = 0x0001;
     struct connection_t* conn;
     struct service_t* service;
+    char sbuff[258] = "";
+    struct descriptor_t* descriptor;
     struct characteristic_t* character;
     struct gecko_msg_gatt_service_evt_t* service_evt;
     struct gecko_msg_gatt_characteristic_evt_t* character_evt;
     struct gecko_msg_gatt_descriptor_evt_t* descriptor_evt;
-    
+    struct gecko_msg_gatt_descriptor_value_evt_t* descriptor_value_evt;
+
     switch(BGLIB_MSG_ID(evt->header)){
     case gecko_evt_gatt_procedure_completed_id:
         discover_request_free_head();
@@ -211,11 +215,29 @@ int discover_event_handler(struct sock_t* sock, struct option_args_t* args, stru
         if(!conn){
             return BLE_EVENT_IGNORE;
         }
-        character = characteristic_find_by_uuid(&conn->characteristic_list, to_uuid16(&descriptor_evt->uuid));
+        character = characteristic_find_by_handle(&conn->characteristic_list, discover_request_get()->characteristic);
         if(!character){
             return BLE_EVENT_IGNORE;
         }
-        descriptor_set(character, descriptor_evt);
+        descriptor_add(character, &conn->descriptor_list, descriptor_evt);
+        gecko_cmd_gatt_read_descriptor_value(conn->connection, descriptor_evt->descriptor);
+        break;
+
+    case gecko_evt_gatt_descriptor_value_id:
+        descriptor_value_evt = &evt->data.evt_gatt_descriptor_value;
+        conn = connection_find_by_conn(descriptor_value_evt->connection);
+        if(!conn){
+            break;
+        }
+        descriptor = descriptor_find_by_handle(&conn->descriptor_list, descriptor_value_evt->descriptor);
+        if(!descriptor){
+            break;
+        }
+        hex2str(descriptor_value_evt->value.data, descriptor_value_evt->value.len, sbuff);
+        info("Service: %.4X -> Characteristic: %.4X ->  Descriptor: %.4X -> Value: %s", 
+                ntohs(descriptor->characteristic->service->uuid),
+                ntohs(descriptor->characteristic->uuid),
+                ntohs(descriptor->uuid), sbuff);
         break;
 
     case gecko_evt_gatt_service_id:
@@ -240,7 +262,7 @@ int discover_event_handler(struct sock_t* sock, struct option_args_t* args, stru
             return BLE_EVENT_IGNORE;
         }
         characteristic_add(service, &conn->characteristic_list, character_evt);
-        //discover_descriptors(character_evt->connection, character_evt->characteristic);
+        discover_descriptors(character_evt->connection, character_evt->characteristic);
         info("discover characteristic evt");
         break;
 

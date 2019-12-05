@@ -18,6 +18,7 @@ struct connection_t {
     uint8_t reason;
     struct service_list_t service_list;
     struct characteristic_list_t characteristic_list;
+    struct descriptor_list_t descriptor_list;
 };
 
 #ifdef __cplusplus

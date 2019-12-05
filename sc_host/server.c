@@ -106,10 +106,6 @@ int schostd_main(int argc, char *argv[])
             case gecko_evt_system_boot_id:
                 cmd = OPT_IDLE;
                 hw_timer_list_clear();
-                //notify_list_clear();
-                //read_request_list_clear();
-                //write_request_list_clear();
-                //discover_request_list_clear();
 
                 for(int i = 0 ; i < OPT_ALL ; i ++){
                     if(!cmd_tab[i].bootup_handler){

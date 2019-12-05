@@ -50,9 +50,53 @@ int characteristic_add(struct service_t* service, struct characteristic_list_t* 
    
 }
 
-int descriptor_set(struct characteristic_t* character, struct gecko_msg_gatt_descriptor_evt_t* evt)
+int descriptor_add(struct characteristic_t* characteristic, struct descriptor_list_t* list,
+        struct gecko_msg_gatt_descriptor_evt_t* evt)
 {
+    uint16_t uuid;
+    struct descriptor_t* descriptor;
+
+    uuid = to_uuid16(&evt->uuid);
+    descriptor = descriptor_find_by_uuid(list, uuid);
+    if(!descriptor){
+        descriptor = (struct descriptor_t*)calloc(1, sizeof(struct descriptor_t));
+        if(!descriptor){
+            return -1;
+        }
+        descriptor->handle = evt->descriptor;
+        descriptor->uuid   = uuid;
+        descriptor->head   = list;
+        descriptor->characteristic = characteristic;
+        LIST_INSERT_HEAD(list, descriptor, entry);
+    }
+
     return 0;
+}
+
+struct descriptor_t* descriptor_find_by_handle(struct descriptor_list_t* list, uint16_t handle)
+{
+    struct descriptor_t* descriptor;
+
+    LIST_FOREACH(descriptor, list, entry){
+        if(handle == descriptor->handle){
+            return descriptor;
+        }
+    }
+
+    return NULL;
+}
+
+struct descriptor_t* descriptor_find_by_uuid(struct descriptor_list_t* list, uint16_t uuid)
+{
+    struct descriptor_t* descriptor;
+
+    LIST_FOREACH(descriptor, list, entry){
+        if(uuid == descriptor->uuid){
+            return descriptor;
+        }
+    }
+
+    return NULL;
 }
 
 struct service_t* service_find_by_handle(struct service_list_t* list, uint32_t handle)
@@ -82,6 +126,19 @@ struct service_t* service_find_by_uuid(struct service_list_t* list, uint16_t uui
     return NULL;
 }
 
+struct characteristic_t* characteristic_find_by_handle(struct characteristic_list_t* list, uint16_t handle)
+{
+    struct characteristic_t* character;
+
+    LIST_FOREACH(character, list, entry) {
+        if(handle == character->handle){
+            return character;
+        }
+    }
+
+    return NULL;
+}
+
 struct characteristic_t* characteristic_find_by_uuid(struct characteristic_list_t* list, uint16_t uuid)
 {
     struct characteristic_t* character;
@@ -102,9 +159,6 @@ int service_clean(struct service_list_t* list)
     while(!LIST_EMPTY(list)){
         service = LIST_FIRST(list);
         LIST_REMOVE(service, entry);
-        if(!service){
-            break;
-        }
         Free(service);
     }
 
@@ -118,13 +172,22 @@ int characteristic_clean(struct characteristic_list_t* list)
     while(!LIST_EMPTY(list)){
         character = LIST_FIRST(list);
         LIST_REMOVE(character, entry);
-        if(character->desc.info){
-            Free(character->desc.info);
-        }
         Free(character);
     }
 
     return 0;
 }
 
+int descriptor_clean(struct descriptor_list_t* list)
+{
+    struct descriptor_t* descriptor;
+
+    while(!LIST_EMPTY(list)){
+        descriptor = LIST_FIRST(list);
+        LIST_REMOVE(descriptor, entry);
+        Free(descriptor);
+    }
+
+    return 0;
+}
 

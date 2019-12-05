@@ -9,7 +9,7 @@
 #include "connection.h"
 
 #define GATT_TIMER_ID        0x30
-#define GATT_TIMER_INTERVAL  1.0f
+#define GATT_TIMER_INTERVAL  5.0f
 
 static int gatt_timer_handler(struct hw_timer_t* t);
 
@@ -21,18 +21,6 @@ struct hw_timer_t gatt_timer = {
     .callback = gatt_timer_handler,
     .interval = GATT_TIMER_INTERVAL,
 };
-
-size_t hex2str(uint8_t* data, size_t len, char* buffer)
-{
-    strcpy(buffer, "0x");
-    buffer += 2;
-    for(int i = 0 ; i < len ; i ++){
-        sprintf(buffer, "%.2X", data[i]);
-        buffer += 2;
-    }
-
-    return len;
-}
 
 int gatt_find_local_attribute(uint16_t uuid, uint16_t* attr)
 {
@@ -55,7 +43,6 @@ int gatt_find_local_attributes(struct gatt_attr_t* gas, int size)
 {
     for(int i = 0 ; i < size ; i ++){
         gatt_find_local_attribute(gas[i].uuid, &gas[i].attr);
-        info("UUID(%.4X) : ATTR(%.4X)", gas[i].uuid, gas[i].attr);
     }
 
     return 0;

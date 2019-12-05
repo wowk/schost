@@ -28,6 +28,17 @@ uint16_t to_uuid16(uint8array* uuid)
 	return val;
 }
 
+size_t hex2str(uint8_t* data, size_t len, char* buffer)
+{
+    strcpy(buffer, "0x");
+    buffer += 2;
+    for(int i = 0 ; i < len ; i ++){
+        sprintf(buffer, "%.2X", data[i]);
+        buffer += 2;
+    }
+
+    return len;
+}
 
 char* btaddr2str(void* addr,  char* buf)
 {
