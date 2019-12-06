@@ -68,7 +68,7 @@ endif
 # Create directories and do a clean which is compatible with parallell make
 $(shell mkdir $(OBJ_DIR)>$(NULLDEVICE) 2>&1)
 $(shell mkdir $(EXE_DIR)>$(NULLDEVICE) 2>&1)
-$(shell mkdir $(LST_DIR)>$(NULLDEVICE) 2>&1)
+#$(shell mkdir $(LST_DIR)>$(NULLDEVICE) 2>&1)
 ifeq (clean,$(findstring clean, $(MAKECMDGOALS)))
   ifneq ($(filter $(MAKECMDGOALS),all debug release),)
     $(shell $(RMFILES) $(OBJ_DIR)$(ALLFILES)>$(NULLDEVICE) 2>&1)

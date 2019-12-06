@@ -70,6 +70,31 @@ void discover_request_free_head()
     }
 }
 
+void discover_clear_by_connection(uint8_t connection)
+{
+    struct discover_request_elem_t* elem;
+    struct discover_request_elem_t* deleted = NULL;
+
+    STAILQ_FOREACH(elem, &discover_request_queue, entry) {
+        if(deleted){
+            info("clear request");
+            STAILQ_REMOVE(&discover_request_queue, deleted, discover_request_elem_t, entry);
+            free(deleted);
+            deleted = NULL;
+        }
+        if(elem->req.connection == connection){
+            deleted = elem;
+        }
+    }
+    
+    if(deleted){
+        info("clear request");
+        STAILQ_REMOVE(&discover_request_queue, deleted, discover_request_elem_t, entry);
+        free(deleted);
+        deleted = NULL;
+    }
+}
+
 void discover_request_queue_clear()
 {
     struct discover_request_elem_t* elem;

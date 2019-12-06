@@ -31,6 +31,8 @@ int discover_services(uint8_t connection);
 int discover_characteristics(uint8_t connection, uint32_t service);
 int discover_descriptors(uint8_t connection, uint16_t characteristic);
 
+void discover_clear_by_connection(uint8_t connection);
+
 #ifdef __cplusplus
 };
 #endif

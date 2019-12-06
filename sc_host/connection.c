@@ -76,7 +76,8 @@ int connection_closed(uint8_t connid, uint16_t reason)
     service_clean(&conn->service_list);
     characteristic_clean(&conn->characteristic_list);
     descriptor_clean(&conn->descriptor_list);
-
+    discover_clear_by_connection(conn->connection);
+    
     info("connection closed");
     
     return 0;
@@ -327,7 +328,7 @@ int connection_cmd_handler(struct sock_t* sock, struct option_args_t* args)
     }
 
     if(args->connection.disconn){
-        conn = connection_find_by_conn(args->connect.disconn);
+        conn = connection_find_by_conn(args->connection.disconn);
         if(conn){
             gecko_cmd_le_connection_close(conn->connection);
         }else{

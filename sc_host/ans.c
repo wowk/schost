@@ -34,17 +34,8 @@ void alert_notification_service_init()
 {
     gatt_find_local_attributes(ans_attrs, ANS_ATTR_MAX);
     
-    uint8_t category_id_mask = ACI_EMAIL;
+    uint8_t category_id_mask = ACI_SIMPLE_ALERT;
     gatt_write_local_attribute(ans_attrs[ANS_ATTR_SNAC].attr, 1, &category_id_mask);
-
-    struct {
-        uint8_t command_id;
-        uint8_t category_id
-    } control_point __attribute__((packed)) = {
-        .command_id = 0x08,
-        .category_id= 0x00
-            ,
-    };
 }
 
 void alert_notification_service_timer()

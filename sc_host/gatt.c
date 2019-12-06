@@ -221,12 +221,12 @@ int gatt_cmd_handler(struct sock_t* sock, struct option_args_t* args)
                 }
                 ret = BLE_EVENT_CONTINUE;
             }else{
-                gecko_cmd_gatt_execute_characteristic_value_write(conn->connection, gatt_commit);
                 if(character->properties & gatt_char_prop_writenoresp){
                     result = gecko_cmd_gatt_write_characteristic_value_without_response(
                             conn->connection, character->handle, 
                             args->gatt.write.value.size, 
                             args->gatt.write.value.value)->result;
+                    gecko_cmd_gatt_execute_characteristic_value_write(conn->connection, gatt_commit);
                 }else{
                     result = gecko_cmd_gatt_write_characteristic_value(
                             conn->connection, character->handle, 
@@ -295,8 +295,10 @@ int gatt_event_handler(struct sock_t* sock, struct option_args_t* args, struct g
     case gecko_evt_gatt_characteristic_value_id:
         read_evt = &evt->data.evt_gatt_characteristic_value;
         if(args->gatt.connection != read_evt->connection){
+            printf_socket(sock, "quit from here 1");
             return BLE_EVENT_CONTINUE;
-        }else if(read_evt->att_opcode != gatt_read_request){
+        }else if(read_evt->att_opcode != gatt_read_response){
+            printf_socket(sock, "quit from here 2: %d", read_evt->att_opcode);
             return BLE_EVENT_CONTINUE;
         }
 

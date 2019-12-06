@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <time.h>
 #include <unistd.h>
-
+#include <math.h>
 
 size_t makeEffectMsg(uint8_t* buf, size_t len, uint8_t mode)
 {
@@ -62,12 +62,15 @@ int main(int argc, char* argv[])
     char cmd[256] = "";
 
     srandom(time(NULL));
-
+    
+    float t = time(NULL);
     while(1){
+        t += 0.1f;
         r = (uint8_t)(random()%256);
         g = (uint8_t)(random()%256);
         b = (uint8_t)(random()%256);
         br = (uint8_t)(random()%256);
+        
         makeColorMsg(data, sizeof(data), r, g, b, br);
         //makeEffectMsg(data, sizeof(data), 1+(br%4));
         memset(cmd, 0, sizeof(cmd));
@@ -91,7 +94,7 @@ int main(int argc, char* argv[])
             offset += 1;
         }
         system(cmd);
+        usleep(300*1000);
     }
-
     return 0;
 }

@@ -572,10 +572,10 @@ int parse_args(int argc, char** argv, struct option_args_t* args)
                     parse_int(optarg, &value, 0, CHAR_MAX, "connect.addrtype");
                     args->connect.addrtype = (uint8_t)value;
                 }else if(op == 0 && !strcmp("initphy", options[option_index].name)){
-                    parse_init_phy(optarg, &value, "connect.addrtype");
+                    parse_init_phy(optarg, &value, "connect.initphy");
                     args->connect.initphy = (uint8_t)value;
                 }else if(op == 0 && !strcmp("disconn", options[option_index].name)){
-                    parse_int(optarg, &value, 0, CHAR_MAX, "connect.addrtype");
+                    parse_int(optarg, &value, 0, UINT8_MAX, "connect.disconn");
                     args->connect.disconn = value;
                 }else if(op == 0 && !strcmp("list", options[option_index].name)){
                     args->connect.show = 1;
