@@ -81,6 +81,7 @@ static struct option options[] = {
         {"list",        no_argument,        0, 0},
         {"disconn",     required_argument,  0, 0},
         {"characteristic",optional_argument,0, 0},
+        {"descriptor",  optional_argument,  0, 0},
 
     /* upgrade BT firmware */
     {"upgrade",         no_argument,        0, 0},
@@ -92,6 +93,7 @@ static struct option options[] = {
         {"read",        no_argument,        0, 0},
         {"write",       required_argument,  0, 0},
         {"notify",      required_argument,  0, 0},
+        {"descriptor",  optional_argument,  0, 0},
 
     /* dev sub options */
     {"dev",             no_argument,        0, 0},
@@ -597,6 +599,13 @@ int parse_args(int argc, char** argv, struct option_args_t* args)
                     }else{
                         args->connection.characteristic = 0x100;
                     }
+                }else if(!strcmp("descriptor", options[option_index].name)){
+                    if(optarg){
+                        parse_int(optarg, &value, 0, UINT8_MAX, "connection.descriptor");
+                        args->connection.descriptor = (uint8_t)value;
+                    }else{
+                        args->connection.descriptor = 0x100;
+                    }
                 }else{
                     sub_opt_index --;
                     continue;
@@ -775,7 +784,14 @@ int parse_args(int argc, char** argv, struct option_args_t* args)
 
             /* parse gatt's sub option */
             else if ( sub_opt_status[sub_opt_index] == OPT_GATT ) {
-                if ( op == 0 && !strcmp("read", options[option_index].name) ) {
+                if( op == 0 && !strcmp("descriptor", options[option_index].name) ) {
+                    if(optarg){
+                        parse_int(optarg, &value, 0, UINT8_MAX, "gatt.descriptor");
+                        args->gatt.descriptor = (uint8_t)value;
+                    }else{
+                        usage(argv[0]);
+                    }
+                } else if ( op == 0 && !strcmp("read", options[option_index].name) ) {
                     args->gatt.option = OPT_GATT_READ;
                 
                 } else if ( op == 0 && !strcmp("notify", options[option_index].name) ) {

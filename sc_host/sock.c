@@ -1,4 +1,5 @@
 #include <debug.h>
+#include <util.h>
 #include <sock.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -55,7 +56,7 @@ struct sock_t* create_socket(int af, int domain, int proto)
         return NULL;
     }
 
-    sock = (struct sock_t*)malloc(sizeof(struct sock_t));
+    sock = (struct sock_t*)Calloc(1, sizeof(struct sock_t));
     if(!sock){
         error(1, errno, "failed to create socket object");
         goto return_error;
@@ -103,7 +104,7 @@ int listen_socket(struct sock_t* sock, int backlog)
 
 struct sock_t* accept_socket(struct sock_t* sock)
 {
-    struct sock_t* cli_sock = (struct sock_t*)malloc(sizeof(struct sock_t));
+    struct sock_t* cli_sock = (struct sock_t*)Calloc(1, sizeof(struct sock_t));
     if(!cli_sock){
         error(0, errno, "failed to accept new connection");
         return NULL;

@@ -1,4 +1,5 @@
 #include "debug.h"
+#include <util.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -96,7 +97,7 @@ size_t cat(const char* file, char** pdata, size_t len)
             goto error;
         }
     }
-    *pdata = (char*)calloc(1, len+1);
+    *pdata = (char*)Calloc(1, len+1);
     if (!(*pdata)) {
         error(0, errno, "failed to malloc");
         goto error;

@@ -68,8 +68,8 @@ struct service_t* service_find_by_handle(struct service_list_t*, uint32_t handle
 struct service_t* service_find_by_uuid(struct service_list_t*, uint16_t uuid);
 struct characteristic_t* characteristic_find_by_handle(struct characteristic_list_t*, uint16_t handle);
 struct characteristic_t* characteristic_find_by_uuid(struct characteristic_list_t*, uint16_t uuid);
-struct descriptor_t* descriptor_find_by_handle(struct descriptor_list_t* list, uint16_t handle);
-struct descriptor_t* descriptor_find_by_uuid(struct descriptor_list_t* list, uint16_t uuid);
+struct descriptor_t* descriptor_find_by_handle(struct descriptor_list_t* list, uint16_t characteristic, uint16_t handle);
+struct descriptor_t* descriptor_find_by_uuid(struct descriptor_list_t* list, uint16_t characteristic,  uint16_t uuid);
 
 int service_clean(struct service_list_t*);
 int characteristic_clean(struct characteristic_list_t*);

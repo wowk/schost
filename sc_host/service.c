@@ -12,7 +12,7 @@ int service_add(struct service_list_t* list, struct gecko_msg_gatt_service_evt_t
     uuid = to_uuid16(&evt->uuid);
     service = service_find_by_uuid(list, uuid);
     if(!service){
-        service = (struct service_t*)calloc(1, sizeof(struct service_t));
+        service = (struct service_t*)Calloc(1, sizeof(struct service_t));
         if(!service){
             return -1;
         }
@@ -34,7 +34,7 @@ int characteristic_add(struct service_t* service, struct characteristic_list_t* 
     uuid = to_uuid16(&evt->uuid);
     character = characteristic_find_by_uuid(list, uuid);
     if(!character){
-        character = (struct characteristic_t*)calloc(1, sizeof(struct characteristic_t));
+        character = (struct characteristic_t*)Calloc(1, sizeof(struct characteristic_t));
         if(!character){
             return -1;
         }
@@ -57,9 +57,9 @@ int descriptor_add(struct characteristic_t* characteristic, struct descriptor_li
     struct descriptor_t* descriptor;
 
     uuid = to_uuid16(&evt->uuid);
-    descriptor = descriptor_find_by_uuid(list, uuid);
+    descriptor = descriptor_find_by_uuid(list, characteristic->handle, uuid);
     if(!descriptor){
-        descriptor = (struct descriptor_t*)calloc(1, sizeof(struct descriptor_t));
+        descriptor = (struct descriptor_t*)Calloc(1, sizeof(struct descriptor_t));
         if(!descriptor){
             return -1;
         }
@@ -73,12 +73,13 @@ int descriptor_add(struct characteristic_t* characteristic, struct descriptor_li
     return 0;
 }
 
-struct descriptor_t* descriptor_find_by_handle(struct descriptor_list_t* list, uint16_t handle)
+struct descriptor_t* descriptor_find_by_handle(struct descriptor_list_t* list, 
+        uint16_t characteristic, uint16_t handle)
 {
     struct descriptor_t* descriptor;
 
     LIST_FOREACH(descriptor, list, entry){
-        if(handle == descriptor->handle){
+        if(handle == descriptor->handle && characteristic == descriptor->characteristic->handle){
             return descriptor;
         }
     }
@@ -86,12 +87,13 @@ struct descriptor_t* descriptor_find_by_handle(struct descriptor_list_t* list, u
     return NULL;
 }
 
-struct descriptor_t* descriptor_find_by_uuid(struct descriptor_list_t* list, uint16_t uuid)
+struct descriptor_t* descriptor_find_by_uuid(struct descriptor_list_t* list, 
+        uint16_t characteristic, uint16_t uuid)
 {
     struct descriptor_t* descriptor;
 
     LIST_FOREACH(descriptor, list, entry){
-        if(uuid == descriptor->uuid){
+        if(uuid == descriptor->uuid && characteristic == descriptor->characteristic->handle){
             return descriptor;
         }
     }

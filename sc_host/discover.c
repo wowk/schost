@@ -89,7 +89,7 @@ int discover_services(uint8_t connection)
     struct discover_request_t* req;
     struct discover_request_elem_t* elem;
 
-    elem = (struct discover_request_elem_t*)malloc(sizeof(*elem));
+    elem = (struct discover_request_elem_t*)Calloc(1, sizeof(*elem));
     if(!elem){
         return -1;
     }
@@ -108,7 +108,7 @@ int discover_characteristics(uint8_t connection, uint32_t service)
     struct discover_request_t* req;
     struct discover_request_elem_t* elem;
 
-    elem = (struct discover_request_elem_t*)malloc(sizeof(*elem));
+    elem = (struct discover_request_elem_t*)Calloc(1, sizeof(*elem));
     if(!elem){
         return -1;
     }
@@ -126,7 +126,7 @@ int discover_descriptors(uint8_t connection, uint16_t characteristic)
     struct discover_request_t* req;
     struct discover_request_elem_t* elem;
 
-    elem = (struct discover_request_elem_t*)malloc(sizeof(*elem));
+    elem = (struct discover_request_elem_t*)Calloc(1, sizeof(*elem));
     if(!elem){
         return -1;
     }
@@ -142,7 +142,7 @@ int discover_descriptors(uint8_t connection, uint16_t characteristic)
 
 static int discover_timer_handler(struct hw_timer_t* t)
 {
-    int result;
+    int result = 0;
     struct discover_request_t* req;
     
     req = discover_request_get();
@@ -161,11 +161,17 @@ static int discover_timer_handler(struct hw_timer_t* t)
     case DISCOVER_DESCRIPTORS:
         //info("Find Service 2\n");
         //we dont want to support this because of no demands
-        gecko_cmd_gatt_discover_descriptors(req->connection, req->characteristic);
+        result = gecko_cmd_gatt_discover_descriptors(req->connection, req->characteristic)->result;
+        if(result){
+            info("error: %s(%d)\n", error_summary(result), result);
+        }
         break;
     case DISCOVER_CHARACTERISTIC:
         //info("Find Service 3\n");
-        gecko_cmd_gatt_discover_characteristics(req->connection, req->service);
+        result = gecko_cmd_gatt_discover_characteristics(req->connection, req->service)->result;
+        if(result){
+            info("error: %s(%d)\n", error_summary(result), result);
+        }
         break;
     default:
         //info("Find Service 4\n");
@@ -195,13 +201,10 @@ int discover_event_handler(struct sock_t* sock, struct option_args_t* args, stru
     uint16_t vvv = 0x0001;
     struct connection_t* conn;
     struct service_t* service;
-    char sbuff[258] = "";
-    struct descriptor_t* descriptor;
     struct characteristic_t* character;
     struct gecko_msg_gatt_service_evt_t* service_evt;
     struct gecko_msg_gatt_characteristic_evt_t* character_evt;
     struct gecko_msg_gatt_descriptor_evt_t* descriptor_evt;
-    struct gecko_msg_gatt_descriptor_value_evt_t* descriptor_value_evt;
 
     switch(BGLIB_MSG_ID(evt->header)){
     case gecko_evt_gatt_procedure_completed_id:
@@ -209,61 +212,49 @@ int discover_event_handler(struct sock_t* sock, struct option_args_t* args, stru
         break;
 
     case gecko_evt_gatt_descriptor_id:
-        info("discover desc evt");
         descriptor_evt = &evt->data.evt_gatt_descriptor;
+        info("discover descriptor: %.4X", ntohs(to_uuid16(&descriptor_evt->uuid)));
         conn = connection_find_by_conn(descriptor_evt->connection);
         if(!conn){
-            return BLE_EVENT_IGNORE;
+            break;
         }
-        character = characteristic_find_by_handle(&conn->characteristic_list, discover_request_get()->characteristic);
+        character = characteristic_find_by_handle(&conn->characteristic_list, 
+                discover_request_get()->characteristic);
         if(!character){
-            return BLE_EVENT_IGNORE;
+            break;
         }
+        info("Service: %.4X -> Characteristic: %.4X ->  Descriptor: %.4X", 
+                ntohs(character->service->uuid),
+                ntohs(character->uuid),
+                ntohs(to_uuid16(&descriptor_evt->uuid)));
         descriptor_add(character, &conn->descriptor_list, descriptor_evt);
-        gecko_cmd_gatt_read_descriptor_value(conn->connection, descriptor_evt->descriptor);
-        break;
-
-    case gecko_evt_gatt_descriptor_value_id:
-        descriptor_value_evt = &evt->data.evt_gatt_descriptor_value;
-        conn = connection_find_by_conn(descriptor_value_evt->connection);
-        if(!conn){
-            break;
-        }
-        descriptor = descriptor_find_by_handle(&conn->descriptor_list, descriptor_value_evt->descriptor);
-        if(!descriptor){
-            break;
-        }
-        hex2str(descriptor_value_evt->value.data, descriptor_value_evt->value.len, sbuff);
-        info("Service: %.4X -> Characteristic: %.4X ->  Descriptor: %.4X -> Value: %s", 
-                ntohs(descriptor->characteristic->service->uuid),
-                ntohs(descriptor->characteristic->uuid),
-                ntohs(descriptor->uuid), sbuff);
+        //gecko_cmd_gatt_read_descriptor_value(conn->connection, descriptor_evt->descriptor);
         break;
 
     case gecko_evt_gatt_service_id:
         service_evt = &evt->data.evt_gatt_service;
         conn = connection_find_by_conn(service_evt->connection);
         if(!conn){
-            return BLE_EVENT_IGNORE;
+            break;
         }
         service_add(&conn->service_list, service_evt);
         discover_characteristics(service_evt->connection, service_evt->service);
-        info("discover service evt");
+        info("discover service: %.4X", ntohs(to_uuid16(&service_evt->uuid)));
         break;
 
     case gecko_evt_gatt_characteristic_id:
         character_evt = &evt->data.evt_gatt_characteristic;
         conn = connection_find_by_conn(character_evt->connection);
         if(!conn){
-            return BLE_EVENT_IGNORE;
+            break;
         }
         service = service_find_by_handle(&conn->service_list, discover_request_get()->service);
         if(!service){
-            return BLE_EVENT_IGNORE;
+            break;
         }
         characteristic_add(service, &conn->characteristic_list, character_evt);
         discover_descriptors(character_evt->connection, character_evt->characteristic);
-        info("discover characteristic evt");
+        info("discover characteristic: %.4X", ntohs(to_uuid16(&character_evt->uuid)));
         break;
 
     default:

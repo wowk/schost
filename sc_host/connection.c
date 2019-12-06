@@ -37,7 +37,7 @@ int connection_opened(struct gecko_msg_le_connection_opened_evt_t* evt)
 
     conn = connection_find_unused();
     if(!conn){
-        conn_elem = (struct connection_elem_t*)calloc(1, sizeof(struct connection_elem_t));
+        conn_elem = (struct connection_elem_t*)Calloc(1, sizeof(struct connection_elem_t));
         if(!conn_elem){
             return -ENOMEM;
         }
@@ -251,6 +251,40 @@ static int connection_characteristic_dump(struct connection_t* conn, void* args)
     return 0;
 }
 
+static int connection_descriptor_dump(struct connection_t* conn, void* args)
+{
+    char address[18] = "";
+    char prop_buf[32] = "";
+    struct descriptor_t* descriptor;
+    struct connection_visit_args_t* cva;
+
+    cva = (struct connection_visit_args_t*)args;
+    
+    if(!conn->used){
+        return 0;
+    }else if(cva->conn){
+        if(cva->conn != conn){
+            return 0;
+        }
+    }
+    
+    btaddr2str(&conn->address, address);
+    printf_socket(cva->sock, "Connection: %d", conn->connection);
+    printf_socket(cva->sock, "       ServiceUUID CharacteristicUUID  DescriptorUUID Descriptor", 
+            conn->connection, address, conn->addrtype);
+    LIST_FOREACH(descriptor, &conn->descriptor_list, entry){
+        printf_socket(cva->sock, "       %.4X        %.4X                %.4X           %d", 
+                ntohs(descriptor->characteristic->service->uuid), 
+                ntohs(descriptor->characteristic->uuid), 
+                ntohs(descriptor->uuid),
+                descriptor->handle);
+    }
+
+    return 0;
+}
+
+
+
 int connection_cmd_handler(struct sock_t* sock, struct option_args_t* args)
 {
     struct connection_t* conn;
@@ -260,12 +294,13 @@ int connection_cmd_handler(struct sock_t* sock, struct option_args_t* args)
         connection_visit(connection_dump, sock);
     }
     
+    struct connection_visit_args_t cva = {
+        .conn = NULL,
+        .sock = sock,
+        .args = args,
+    };
+
     if(args->connection.characteristic){
-        struct connection_visit_args_t cva = {
-            .conn = NULL,
-            .sock = sock,
-            .args = args,
-        };
         if(args->connection.characteristic != 0x100){
             cva.conn = connection_find_by_conn((uint8_t)args->connection.characteristic);
             if(!cva.conn){
@@ -278,6 +313,19 @@ int connection_cmd_handler(struct sock_t* sock, struct option_args_t* args)
         }
     }
     
+    if(args->connection.descriptor){
+        if(args->connection.descriptor != 0x100){
+            cva.conn = connection_find_by_conn((uint8_t)args->connection.characteristic);
+            if(!cva.conn){
+                printf_socket(sock, "Connection Not Found");
+            }else{
+                connection_visit(connection_descriptor_dump, &cva);
+            }
+        }else{
+            connection_visit(connection_descriptor_dump, &cva);
+        }
+    }
+
     if(args->connection.disconn){
         conn = connection_find_by_conn(args->connect.disconn);
         if(conn){

@@ -132,13 +132,17 @@ int gatt_cmd_handler(struct sock_t* sock, struct option_args_t* args)
     uint8_t value[256];
     char sbuffer[515] = "";
     struct connection_t* conn;
+    struct descriptor_t* descriptor;
     struct characteristic_t* character;
-
 
     switch(args->gatt.option){
     case OPT_GATT_READ:
         printf_socket(sock, "read: connection: 0x%.2x, uuid: 0x%.4X", args->gatt.connection, args->gatt.uuid);
         if(args->gatt.connection == 0x100){
+            if(args->gatt.descriptor){
+                printf_socket(sock, "Not Supported to Read Local Descriptor");
+                break;
+            }
             result = gatt_read_local_attribute_by_uuid(args->gatt.uuid, &size, value);
             if(result){
                 printf_socket(sock, "read failed: %s\n", error_summary(result));
@@ -157,18 +161,35 @@ int gatt_cmd_handler(struct sock_t* sock, struct option_args_t* args)
                 printf_socket(sock, "Characteristic Not Found");
                 break;
             }
-            printf_socket(sock, "read(Conn: %d, Characteristic: %d)", conn->connection, character->handle);
-            result = gecko_cmd_gatt_read_characteristic_value(conn->connection, character->handle)->result;
-            if(result){
-                printf_socket(sock, "Error(%d): %s", result, error_summary(result));
-                break;
-            }
+            if(args->gatt.descriptor){
+                descriptor = descriptor_find_by_handle(&conn->descriptor_list, character->handle, args->gatt.descriptor);
+                if(!descriptor){
+                    printf_socket(sock, "Descriptor Not Found");
+                    break;
+                }
+                result = gecko_cmd_gatt_read_descriptor_value(conn->connection, descriptor->handle)->result;
+                if(result){
+                    printf_socket(sock, "Error(%d): %s", result, error_summary(result));
+                    break;
+                }
+            }else{
+                printf_socket(sock, "read(Conn: %d, Characteristic: %d)", conn->connection, character->handle);
+                result = gecko_cmd_gatt_read_characteristic_value(conn->connection, character->handle)->result;
+                if(result){
+                    printf_socket(sock, "Error(%d): %s", result, error_summary(result));
+                    break;
+                }
+            }   
             ret = BLE_EVENT_CONTINUE;
         }
         break;
     case OPT_GATT_WRITE:
         printf_socket(sock, "write: connection: 0x%.2x, uuid: 0x%.4X", args->gatt.connection, args->gatt.uuid);
         if(args->gatt.connection == 0x100){
+            if(args->gatt.descriptor){
+                printf_socket(sock, "Not Supported to Write Local Descriptor");
+                break;
+            }
             result = gatt_write_local_attribute_by_uuid(args->gatt.uuid, 
                     args->gatt.write.value.size, args->gatt.write.value.value);
             if(result){
@@ -185,22 +206,38 @@ int gatt_cmd_handler(struct sock_t* sock, struct option_args_t* args)
                 printf_socket(sock, "Characteristic Not Found");
                 break;
             }
-            if(character->properties & gatt_char_prop_writenoresp){
-                result = gecko_cmd_gatt_write_characteristic_value_without_response(
-                        conn->connection, character->handle, 
-                        args->gatt.write.value.size, 
-                        args->gatt.write.value.value)->result;
-            }else{
-                result = gecko_cmd_gatt_write_characteristic_value(
-                        conn->connection, character->handle, 
-                        args->gatt.write.value.size, 
-                        args->gatt.write.value.value)->result;
+
+            if(args->gatt.descriptor){
+                descriptor = descriptor_find_by_handle(&conn->descriptor_list, character->handle, args->gatt.descriptor);
+                if(!descriptor){
+                    printf_socket(sock, "Descriptor Not Found");
+                    break;
+                }
+                result = gecko_cmd_gatt_write_descriptor_value(conn->connection, descriptor->handle,
+                        args->gatt.write.value.size, args->gatt.write.value.value)->result;
+                if(result){
+                    printf_socket(sock, "Error(%d): %s", result, error_summary(result));
+                    break;
+                }
                 ret = BLE_EVENT_CONTINUE;
-            }
-            if(result){
-                printf_socket(sock, "Error(%d): %s", result, error_summary(result));
-                ret = BLE_EVENT_RETURN;
-                break;
+            }else{
+                gecko_cmd_gatt_execute_characteristic_value_write(conn->connection, gatt_commit);
+                if(character->properties & gatt_char_prop_writenoresp){
+                    result = gecko_cmd_gatt_write_characteristic_value_without_response(
+                            conn->connection, character->handle, 
+                            args->gatt.write.value.size, 
+                            args->gatt.write.value.value)->result;
+                }else{
+                    result = gecko_cmd_gatt_write_characteristic_value(
+                            conn->connection, character->handle, 
+                            args->gatt.write.value.size, 
+                            args->gatt.write.value.value)->result;
+                    ret = BLE_EVENT_CONTINUE;
+                }
+                if(result){
+                    printf_socket(sock, "Error(%d): %s", result, error_summary(result));
+                    break;
+                }
             }
         }
         break;
@@ -248,9 +285,11 @@ int gatt_event_handler(struct sock_t* sock, struct option_args_t* args, struct g
     int ret = BLE_EVENT_CONTINUE;
     char sbuffer[515] = "";
     struct connection_t* conn;
+    struct descriptor_t* descriptor;
     struct characteristic_t* character;
     struct gecko_msg_gatt_characteristic_value_evt_t* read_evt;
     struct gecko_msg_gatt_procedure_completed_evt_t* complete_evt;
+    struct gecko_msg_gatt_descriptor_value_evt_t* descriptor_value_evt;
 
     switch(BGLIB_MSG_ID(evt->header)){
     case gecko_evt_gatt_characteristic_value_id:
@@ -279,11 +318,38 @@ int gatt_event_handler(struct sock_t* sock, struct option_args_t* args, struct g
             ret = BLE_EVENT_RETURN;
         }
         break;
+    
+    case gecko_evt_gatt_descriptor_value_id:
+        descriptor_value_evt = &evt->data.evt_gatt_descriptor_value;
+        conn = connection_find_by_conn(descriptor_value_evt->connection);
+        if(!conn){
+            break;
+        }
+        character = characteristic_find_by_uuid(&conn->characteristic_list, args->gatt.uuid);
+        if(!character){
+            break;
+        }
+        descriptor = descriptor_find_by_handle(&conn->descriptor_list, 
+                character->handle,
+                descriptor_value_evt->descriptor);
+        if(!descriptor){
+            break;
+        }
+        hex2str(descriptor_value_evt->value.data, descriptor_value_evt->value.len, sbuffer);
+        printf_socket(sock, "value: %s", sbuffer);
+
+        //info("Service: %.4X -> Characteristic: %.4X ->  Descriptor: %.4X -> Value: %s", 
+        //        ntohs(descriptor->characteristic->service->uuid),
+        //        ntohs(descriptor->characteristic->uuid),
+        //        ntohs(descriptor->uuid), sbuffer);
+        break;
+
     case gecko_evt_gatt_procedure_completed_id:
         complete_evt = &evt->data.evt_gatt_procedure_completed;
         if(complete_evt->result){
             printf_socket(sock, "Error(%d): %s", complete_evt->result, error_summary(complete_evt->result));
         }
+        printf_socket(sock, "Done");
         ret = BLE_EVENT_RETURN;
         break;
     default:

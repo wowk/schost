@@ -64,6 +64,7 @@ struct connection_arg_t {
     uint8_t disconn;
     uint8_t list;
     uint16_t characteristic;
+    uint16_t descriptor;
 };
 
 struct pair_arg_t {
@@ -132,6 +133,7 @@ struct gatt_arg_t {
     uint8_t option;
     uint16_t connection;
     uint16_t uuid;
+    uint8_t descriptor;
     struct notify_arg_t notify;
     struct write_arg_t write;
     struct read_arg_t read;

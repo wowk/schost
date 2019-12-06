@@ -20,6 +20,7 @@ discover_request_list
 
 #include "debug.h"
 #include "timer.h"
+#include <util.h>
 #include "host_gecko.h"
 #include <stdint.h>
 #include <stdlib.h>
@@ -55,7 +56,7 @@ int hw_timer_add(struct hw_timer_t* t)
         timer->callback = t->callback;
         interval = t->interval*32768;
     }else{
-        timer_elem = (struct hw_timer_elem_t*)calloc(1, sizeof(struct hw_timer_elem_t));
+        timer_elem = (struct hw_timer_elem_t*)Calloc(1, sizeof(struct hw_timer_elem_t));
         if(!timer_elem){
             return -1;
         }

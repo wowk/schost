@@ -1,3 +1,4 @@
+#include <util.h>
 #include <neigh.h>
 
 struct neigh_elem_t {
@@ -58,7 +59,7 @@ void neigh_list_add(int phy, struct gecko_msg_le_gap_scan_response_evt_t* rsp)
     
     neigh = neigh_list_find(rsp->address); 
     if(!neigh) {
-        neigh_elem = (struct neigh_elem_t*)calloc(1, sizeof(struct neigh_elem_t));
+        neigh_elem = (struct neigh_elem_t*)Calloc(1, sizeof(struct neigh_elem_t));
         if(!neigh_elem){
             return;
         }

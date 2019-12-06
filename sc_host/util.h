@@ -16,10 +16,10 @@
 #define BLE_DEVNAME    BLE_INFO"devname"
 
 #define Free(p) do{\
-    info("Free Here 0x%p\n", p);\
     free(p);\
 }while(0)
 
+#define Calloc(cnt, size) calloc(cnt, size)
 
 extern uint16_t to_uuid16(uint8array* uuid);
 extern size_t hex2str(uint8_t* data, size_t len, char* buffer);
