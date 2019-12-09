@@ -139,6 +139,10 @@ struct gatt_arg_t {
     struct read_arg_t read;
 };
 
+struct discover_arg_t {
+    uint16_t connection;
+};
+
 struct option_args_t {
     struct dev_arg_t dev;
     struct scan_arg_t scan;
@@ -150,10 +154,9 @@ struct option_args_t {
     struct set_arg_t set;
     struct dtm_arg_t dtm;
     struct gatt_arg_t gatt;
-
+    struct discover_arg_t discover;
     uint8_t option;
 	uint8_t debug;
 };
-
 
 #endif

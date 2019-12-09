@@ -27,13 +27,16 @@ struct cmd_table_t cmd_tab[OPT_ALL] = {
      
     [OPT_CONNECT] = {
         .name = "CONNECT",
-        .single_shot = true, 
+        .single_shot = false, 
+        .bootup_handler = connect_bootup_handler,
         .cmd_handler = connect_cmd_handler, 
+        .event_handler = connect_event_handler,
     },
     
     [OPT_CONNECTION] = {
         .name = "CONNECTION",
         .single_shot = true, 
+        .bootup_handler = connect_bootup_handler,
         .cmd_handler = connection_cmd_handler, 
     },
     

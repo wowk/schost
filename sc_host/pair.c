@@ -25,7 +25,6 @@ uint8_t handle = 0;
 
 int pair_bootup_handler(struct sock_t* sock, struct option_args_t* args)
 {
-    connection_clear();
     return 0;
 }
 
@@ -43,33 +42,7 @@ int pair_cmd_handler(struct sock_t* sock, struct option_args_t* args)
 
 int pair_event_handler(struct sock_t* sock, struct option_args_t* args, struct gecko_cmd_packet *evt)
 {
-    int handle = args->pair.handle;
-    int ret = BLE_EVENT_CONTINUE;
-    struct gecko_msg_le_connection_opened_evt_t* opened_evt;
-    struct gecko_msg_le_connection_closed_evt_t* closed_evt;
-
-    switch (BGLIB_MSG_ID(evt->header)) {
-    case gecko_evt_le_connection_opened_id:
-        opened_evt = &evt->data.evt_le_connection_opened;
-        connection_opened(opened_evt);
-        break;
-
-    case gecko_evt_le_connection_parameters_id:
-        debug(args->debug, "need connect parameters");
-        break;
-
-    case gecko_evt_le_connection_closed_id:
-        closed_evt = &evt->data.evt_le_connection_closed;
-        connection_closed(closed_evt->connection, closed_evt->reason);
-        gecko_cmd_le_gap_start_advertising(handle, 
-                le_gap_general_discoverable, le_gap_connectable_scannable);
-        break;
-
-    default:
-        break;
-    }
-
-    return ret;
+    return BLE_EVENT_CONTINUE;
 }
 
 int pair_cleanup(struct sock_t* sock, struct option_args_t* args)

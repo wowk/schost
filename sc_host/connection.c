@@ -57,8 +57,6 @@ int connection_opened(struct gecko_msg_le_connection_opened_evt_t* evt)
     conn->address    = evt->address;
     conn->used = true;
     info("connection opened: %u", conn->connection);
-   
-    discover_services(conn->connection);
 
     return 0;
 }
@@ -284,7 +282,11 @@ static int connection_descriptor_dump(struct connection_t* conn, void* args)
     return 0;
 }
 
-
+int connection_bootup_handler(struct sock_t* sock, struct option_args_t* args)
+{
+    connection_clear();
+    return 0;
+}
 
 int connection_cmd_handler(struct sock_t* sock, struct option_args_t* args)
 {

@@ -180,6 +180,12 @@ int schostd_main(int argc, char *argv[])
             case OPT_GATT:
                 conf.gatt = command.gatt;
                 break;
+            case OPT_CONNECT:
+                conf.connect = command.connect;
+                break;
+            case OPT_DISCOVER:
+                conf.discover = command.discover;
+                break;
             default:
                 break;
             }
@@ -192,10 +198,11 @@ int schostd_main(int argc, char *argv[])
             if(ret == BLE_EVENT_STOP){
                 if(cmd_tab[new_cmd].cleanup){
                     cmd_tab[new_cmd].cleanup(sock, &conf);
-                    info("Do %s Cleanup", cmd_tab[new_cmd].name);
+                    //info("Do %s Cleanup", cmd_tab[new_cmd].name);
                 }
-                info("Back to %s command", cmd_tab[OPT_PAIR].name);
+                //info("Back to %s command", cmd_tab[OPT_PAIR].name);
                 cmd_tab[OPT_PAIR].cmd_handler(sock, &conf);
+                send_socket(sock, 0, 1, "", 0);
                 cmd = OPT_IDLE;
             }else if(ret == BLE_EVENT_RETURN){
                 send_socket(sock, 0, 1, "", 0);

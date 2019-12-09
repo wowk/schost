@@ -10,7 +10,7 @@ struct gecko_msg_hardware_soft_timer_evt_t;
 
 struct hw_timer_t {
     uint8_t id;
-    uint32_t interval;
+    float interval;
     int count;
     int(*callback)(struct hw_timer_t*);
     void* arg;

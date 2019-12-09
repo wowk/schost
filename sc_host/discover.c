@@ -9,7 +9,7 @@
 
 
 #define DISCOVER_TIMER_ID 0x50
-#define DISCOVER_INTERVAL 1.0f
+#define DISCOVER_INTERVAL 0.2f
 
 struct discover_request_elem_t {
     struct discover_request_t req;
@@ -172,7 +172,7 @@ static int discover_timer_handler(struct hw_timer_t* t)
     
     req = discover_request_get();
     if(!req){
-        return BLE_EVENT_CONTINUE;
+        return BLE_EVENT_STOP;
     }
 
     switch(req->type){
@@ -208,17 +208,32 @@ static int discover_timer_handler(struct hw_timer_t* t)
 
 int discover_bootup_handler(struct sock_t* sock, struct option_args_t* args)
 {
-    info("Add Timer\n");
-    discover_timer_arg.sock = NULL;
-    discover_timer_arg.arg  = args;
-    hw_timer_add(&discover_timer);    
-    
+    discover_request_queue_clear();
+   
     return 0;
 }
 
 int discover_cmd_handler(struct sock_t* sock, struct option_args_t* args)
 {
-    return BLE_EVENT_RETURN;
+    if(discover_request_get()){
+        printf_socket(sock, "Previous Discovering Action is still Ongoing");
+        return BLE_EVENT_RETURN;
+    }else if(args->discover.connection == 0x100){
+        printf_socket(sock, "Connection Must Be Given");
+        return BLE_EVENT_RETURN;
+    }else if(!connection_find_by_conn(args->discover.connection)){
+        printf_socket(sock, "Connection Not Found");
+        return BLE_EVENT_RETURN;
+    }
+
+    discover_services(args->discover.connection);
+    
+    info("Add Timer\n");
+    discover_timer_arg.sock = sock;
+    discover_timer_arg.arg  = args;
+    hw_timer_add(&discover_timer);    
+
+    return BLE_EVENT_CONTINUE;
 }
 
 int discover_event_handler(struct sock_t* sock, struct option_args_t* args, struct gecko_cmd_packet* evt)
@@ -285,7 +300,7 @@ int discover_event_handler(struct sock_t* sock, struct option_args_t* args, stru
     default:
         break;
     }
-
+    
     return (int)discover_timer.ret;
 }
 

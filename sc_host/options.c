@@ -83,6 +83,9 @@ static struct option options[] = {
         {"characteristic",optional_argument,0, 0},
         {"descriptor",  optional_argument,  0, 0},
 
+    {"discover",        no_argument,        0, 0},
+        {"connid",      required_argument,  0, 0},
+
     /* upgrade BT firmware */
     {"upgrade",         no_argument,        0, 0},
         {"firmware",    required_argument,  0, 0},
@@ -508,7 +511,9 @@ int parse_args(int argc, char** argv, struct option_args_t* args)
 
     args->gatt.connection = (uint16_t)0x100;
     args->gatt.option     = 0xFF;
-    
+   
+    args->discover.connection = (uint16_t)0x100;
+
     int sub_opt_index = 0;
     enum option_e sub_opt_status[16];
     sub_opt_status[0] = OPT_ALL;
@@ -543,6 +548,9 @@ int parse_args(int argc, char** argv, struct option_args_t* args)
 
                 }else if(op == 0 && !strcmp("connection", options[option_index].name)){
                     args->option = sub_opt_status[++sub_opt_index] = OPT_CONNECTION;
+
+                }else if(op == 0 && !strcmp("discover", options[option_index].name)){
+                    args->option = sub_opt_status[++sub_opt_index] = OPT_DISCOVER;
 
                 }else if(op == 0 && !strcmp("gatt", options[option_index].name)){
                     args->option = sub_opt_status[++sub_opt_index] = OPT_GATT;
@@ -606,6 +614,17 @@ int parse_args(int argc, char** argv, struct option_args_t* args)
                     }else{
                         args->connection.descriptor = 0x100;
                     }
+                }else{
+                    sub_opt_index --;
+                    continue;
+                }
+            }
+
+            else if(sub_opt_status[sub_opt_index] == OPT_DISCOVER) {
+                if ( op == 0 && !strcmp("connid", options[option_index].name) ) {
+                    parse_int(optarg, &value, 0, UINT8_MAX, "gatt.connid");
+                    args->discover.connection = (uint16_t)value;
+
                 }else{
                     sub_opt_index --;
                     continue;
