@@ -60,6 +60,7 @@ struct cmd_table_t cmd_tab[OPT_ALL] = {
     [OPT_UPGRADE] = {
         .name = "UPGRADE",
         .single_shot = false, 
+        .bootup_handler = upgrade_bootup_handler,
         .cmd_handler = upgrade_cmd_handler, 
         .event_handler = upgrade_event_handler, 
         .cleanup = upgrade_cleanup

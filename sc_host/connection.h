@@ -3,6 +3,7 @@
 
 #include "host_gecko.h"
 #include <service.h>
+#include "notify.h"
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -19,6 +20,7 @@ struct connection_t {
     struct service_list_t service_list;
     struct characteristic_list_t characteristic_list;
     struct descriptor_list_t descriptor_list;
+    struct notification_characteristic_list_t notification_list;
 };
 
 #ifdef __cplusplus

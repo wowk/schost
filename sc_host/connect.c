@@ -117,7 +117,6 @@ int connect_cmd_handler(struct sock_t* sock, struct option_args_t* args)
 int connect_event_handler(struct sock_t* sock, struct option_args_t* args, struct gecko_cmd_packet *evt)
 {
     struct gecko_msg_le_connection_opened_evt_t* opened_evt;
-    struct gecko_msg_le_connection_closed_evt_t* closed_evt;
 
     switch (BGLIB_MSG_ID(evt->header)) {
     case gecko_evt_le_connection_opened_id:
@@ -132,12 +131,6 @@ int connect_event_handler(struct sock_t* sock, struct option_args_t* args, struc
 
     case gecko_evt_le_connection_parameters_id:
         debug(args->debug, "need connect parameters");
-        break;
-
-    case gecko_evt_le_connection_closed_id:
-        closed_evt = &evt->data.evt_le_connection_closed;
-        connection_closed(closed_evt->connection, closed_evt->reason);
-        gecko_cmd_le_gap_start_advertising(0, le_gap_general_discoverable, le_gap_connectable_scannable);
         break;
 
     default:

@@ -23,6 +23,11 @@
 
 uint8_t handle = 0;
 
+/* Put HTTP Proxy UUID into AD Data */
+const uint8_t adv_data[] = {
+    4, 0x3, 0x23, 0x18
+};
+
 int pair_bootup_handler(struct sock_t* sock, struct option_args_t* args)
 {
     return 0;
@@ -34,7 +39,7 @@ int pair_cmd_handler(struct sock_t* sock, struct option_args_t* args)
     gecko_cmd_le_gap_set_advertise_phy(handle, args->pair.primary_phy, args->pair.second_phy);
     gecko_cmd_le_gap_set_advertise_timing(handle, 20, 1000, 100, 0);
     gecko_cmd_le_gap_set_advertise_tx_power(handle, args->pair.txpwr);
-    gecko_cmd_le_gap_start_advertising(handle, le_gap_general_discoverable, le_gap_connectable_scannable);
+    gecko_cmd_le_gap_start_advertising(handle++, le_gap_general_discoverable, le_gap_connectable_scannable);
     printf_socket(sock, "enter pairing mode");
 
     return BLE_EVENT_RETURN;
@@ -42,6 +47,18 @@ int pair_cmd_handler(struct sock_t* sock, struct option_args_t* args)
 
 int pair_event_handler(struct sock_t* sock, struct option_args_t* args, struct gecko_cmd_packet *evt)
 {
+    struct gecko_msg_le_connection_closed_evt_t* closed_evt;
+    
+    switch(BGLIB_MSG_ID(evt->header)){
+    case gecko_evt_le_connection_closed_id:
+        closed_evt = &evt->data.evt_le_connection_closed;
+        connection_closed(closed_evt->connection, closed_evt->reason);
+        gecko_cmd_le_gap_start_advertising(handle++, le_gap_general_discoverable, le_gap_connectable_scannable);
+        break;
+    default:
+        break;
+    }
+
     return BLE_EVENT_CONTINUE;
 }
 

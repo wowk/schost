@@ -75,7 +75,6 @@ static struct option options[] = {
         {"address",     required_argument,  0, 0},
         {"addrtype",    required_argument,  0, 0},
         {"initphy",     required_argument,  0, 0},
-        {"select",      no_argument,        0, 0},
     
     {"connection",      no_argument,        0, 0},
         {"list",        no_argument,        0, 0},
@@ -622,7 +621,7 @@ int parse_args(int argc, char** argv, struct option_args_t* args)
 
             else if(sub_opt_status[sub_opt_index] == OPT_DISCOVER) {
                 if ( op == 0 && !strcmp("connid", options[option_index].name) ) {
-                    parse_int(optarg, &value, 0, UINT8_MAX, "gatt.connid");
+                    parse_int(optarg, &value, 0, UINT8_MAX, "discover.connid");
                     args->discover.connection = (uint16_t)value;
 
                 }else{

@@ -4,8 +4,10 @@
 #include "ess.h"
 #include "gatt.h"
 #include "timer.h"
+#include "notify.h"
 #include "headers.h"
 #include "host_gecko.h"
+#include "notify.h"
 #include "connection.h"
 
 #define GATT_TIMER_ID        0x30
@@ -34,7 +36,7 @@ int gatt_find_local_attribute(uint16_t uuid, uint16_t* attr)
         error(0, EINVAL, "result: %s(%.4x)\n", error_summary(attrrsp->result), attrrsp->result);
         return attrrsp->result;
     }
-
+    info("UUID: %4X => Attribute: %.4X", uuid, attrrsp->attribute);
     *attr = attrrsp->attribute;
     return 0;
 }
@@ -127,9 +129,11 @@ int gatt_bootup_handler(struct sock_t* sock, struct option_args_t* args)
 int gatt_cmd_handler(struct sock_t* sock, struct option_args_t* args)
 {
     int ret = BLE_EVENT_RETURN;
-    uint16_t result;
+    int result;
+    uint8_t connid;
     uint8_t size = 0;
     uint8_t value[256];
+    uint16_t characteristic;
     char sbuffer[515] = "";
     struct connection_t* conn;
     struct descriptor_t* descriptor;
@@ -241,35 +245,33 @@ int gatt_cmd_handler(struct sock_t* sock, struct option_args_t* args)
             }
         }
         break;
+
     case OPT_GATT_NOTIFY:
         if(args->gatt.connection == 0x100){
             printf_socket(sock, "connection must be given");
             break;
         }
         
-        conn = connection_find_by_conn(args->gatt.connection);
-        if(!conn){
-            printf_socket(sock, "Connection Not Found");
-            break;
-        }
-
-        character = characteristic_find_by_uuid(&conn->characteristic_list, args->gatt.uuid);
-        if(!character){
-            printf_socket(sock, "Characteristic Not Found");
-            break;
-        }
-        
-        result = gecko_cmd_gatt_server_send_characteristic_notification(
-                    conn->connection, character->handle,
-                    args->gatt.notify.value.size, args->gatt.notify.value.value)->result;
-        
-        if(result){
-            printf_socket(sock, "Error(%d): %s", result, error_summary(result));
-            break;
+        if(args->gatt.connection != 0xFF){
+            conn = connection_find_by_conn(args->gatt.connection);
+            if(!conn){
+                printf_socket(sock, "Connection Not Found");
+                break;
+            }
+            connid = conn->connection;
         }else{
-            printf_socket(sock, "Done");
-            ret = BLE_EVENT_CONTINUE;
+            connid = args->gatt.connection;
         }
+        
+        characteristic = args->gatt.uuid;
+        info("Conn: %d, Characteristic: %d", connid, ntohs(args->gatt.uuid));
+        result = notification_send(connid, characteristic, 
+                args->gatt.notify.value.size, args->gatt.notify.value.value);
+        if(result > 0) {
+            printf_socket(sock, "=Error(%d): %s", result, error_summary(result));
+            break;
+        }
+        ret = BLE_EVENT_CONTINUE;
         break;
     default:
         ret = BLE_EVENT_CONTINUE;
@@ -290,6 +292,7 @@ int gatt_event_handler(struct sock_t* sock, struct option_args_t* args, struct g
     struct gecko_msg_gatt_characteristic_value_evt_t* read_evt;
     struct gecko_msg_gatt_procedure_completed_evt_t* complete_evt;
     struct gecko_msg_gatt_descriptor_value_evt_t* descriptor_value_evt;
+    struct gecko_msg_gatt_server_characteristic_status_evt_t* character_status_evt;
 
     switch(BGLIB_MSG_ID(evt->header)){
     case gecko_evt_gatt_characteristic_value_id:
@@ -320,7 +323,18 @@ int gatt_event_handler(struct sock_t* sock, struct option_args_t* args, struct g
             ret = BLE_EVENT_RETURN;
         }
         break;
-    
+ 
+    case gecko_evt_gatt_server_characteristic_status_id:
+        character_status_evt = &evt->data.evt_gatt_server_characteristic_status;
+        conn = connection_find_by_conn(character_status_evt->connection);
+        if(!conn){
+            printf_socket(sock, "Connection Down");
+        }else{
+            notification_characteristic_add(&conn->notification_list, character_status_evt);
+        }
+        ret = BLE_EVENT_RETURN;
+        break;
+
     case gecko_evt_gatt_descriptor_value_id:
         descriptor_value_evt = &evt->data.evt_gatt_descriptor_value;
         conn = connection_find_by_conn(descriptor_value_evt->connection);

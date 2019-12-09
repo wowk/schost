@@ -48,6 +48,12 @@ int connection_opened(struct gecko_msg_le_connection_opened_evt_t* evt)
     LIST_INIT(&conn->service_list);
     LIST_INIT(&conn->characteristic_list);
     LIST_INIT(&conn->descriptor_list);
+    LIST_INIT(&conn->notification_list);
+    
+    conn->service_list.conn         = conn;
+    conn->characteristic_list.conn  = conn;
+    conn->descriptor_list.conn      = conn;
+    conn->notification_list.conn    = conn;
 
     conn->connection = evt->connection;
     conn->master     = evt->master;

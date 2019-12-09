@@ -98,12 +98,14 @@ int schostd_main(int argc, char *argv[])
                 if(gecko_evt_system_boot_id == BGLIB_MSG_ID(evt->header)) {
                     ble_bootup_done();
                 }else{
+                    info("wait system bootup");
                     continue;
                 }
             }
-            //info("Event: %.8x\n", BGLIB_MSG_ID(evt->header));
+            info("Event: %.8x\n", BGLIB_MSG_ID(evt->header));
             switch (BGLIB_MSG_ID(evt->header)) {
             case gecko_evt_system_boot_id:
+                info("Hello");
                 cmd = OPT_IDLE;
                 hw_timer_list_clear();
 
@@ -163,6 +165,7 @@ int schostd_main(int argc, char *argv[])
                 conf.pair = command.pair;
                 break;
             case OPT_UPGRADE:
+                info("Upgrade Command"); 
                 conf.upgrade = command.upgrade;
                 break;
             case OPT_DTM:

@@ -63,6 +63,7 @@ int pair_event_handler(struct sock_t* sock, struct option_args_t* args,
                         struct gecko_cmd_packet *evt);
 int pair_cleanup(struct sock_t* sock, struct option_args_t* args);
 
+int upgrade_bootup_handler(struct sock_t* sock, struct option_args_t* args);
 int upgrade_cmd_handler(struct sock_t* sock, struct option_args_t* args);
 int upgrade_event_handler(struct sock_t* sock, struct option_args_t* args, 
                         struct gecko_cmd_packet* evt);

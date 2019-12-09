@@ -18,8 +18,8 @@
 #include "util.h"
 
 enum {
-    UPGRADE_INIT,
     UPGRADE_NONE,
+    UPGRADE_INIT,
 } upgrade_state = UPGRADE_NONE;
 
 
@@ -69,27 +69,21 @@ static int upgrade_bt_fw(struct sock_t* sock, const char* firmware_file)
 
 int upgrade_bootup_handler(struct sock_t* sock, struct option_args_t* args)
 {
-    if(upgrade_state == UPGRADE_INIT){
-        gecko_cmd_le_gap_stop_advertising(0);
-        if (access(args->upgrade.firmware, R_OK) < 0) {
-            printf_socket(sock, "failed to access bt chip's firmware: %s", strerror(errno));
-            send_socket(sock, 0, 1, "", 0);
-            upgrade_state = UPGRADE_NONE;
-            gecko_cmd_dfu_reset(0);
-        }else{
-            printf_socket(sock, "Switch to DFU mode");
-            gecko_cmd_dfu_reset(1);
-        }
-    }
-
     return 0;
 }
 
 int upgrade_cmd_handler(struct sock_t* sock, struct option_args_t* args)
 {
-    ble_system_reset(0);
-    upgrade_state = UPGRADE_INIT;
-    printf_socket(sock, "reset system to 1");
+    printf_socket(sock, "Stop Advertising");
+    gecko_cmd_le_gap_stop_advertising(0);
+    if (access(args->upgrade.firmware, R_OK) < 0) {
+        printf_socket(sock, "failed to access bt chip's firmware: %s", strerror(errno));
+        send_socket(sock, 0, 1, "", 0);
+    }else{
+        printf_socket(sock, "Switch to DFU mode");
+        gecko_cmd_dfu_reset(1);
+    }
+
     return BLE_EVENT_CONTINUE;
 }
 
@@ -113,12 +107,14 @@ int upgrade_event_handler(struct sock_t* sock, struct option_args_t* args, struc
             printf_socket(sock, "upgrade bt chip fw successfully");
         }
         printf_socket(sock, "Switch to normal mode");
+        gecko_cmd_dfu_reset(0);
         ret = BLE_EVENT_STOP;
         break;
 
     case gecko_evt_dfu_boot_failure_id:
         dfu_boot_failure_evt = &evt->data.evt_dfu_boot_failure;
         printf_socket(sock, "failed to upgrade bt chip fw: %s", error_summary(dfu_boot_failure_evt->reason));
+        gecko_cmd_dfu_reset(0);
         ret = BLE_EVENT_STOP;
         break;
     default:
@@ -130,9 +126,5 @@ int upgrade_event_handler(struct sock_t* sock, struct option_args_t* args, struc
 
 int upgrade_cleanup(struct sock_t* sock, struct option_args_t* args)
 {
-    printf_socket(sock, "reset system to 0");
-    upgrade_state = UPGRADE_NONE;
-    gecko_cmd_dfu_reset(0);
-
     return 0;
 }
