@@ -34,7 +34,7 @@ int pair_cmd_handler(struct sock_t* sock, struct option_args_t* args)
     gecko_cmd_le_gap_set_advertise_phy(handle, args->pair.primary_phy, args->pair.second_phy);
     gecko_cmd_le_gap_set_advertise_timing(handle, 20, 1000, 100, 0);
     gecko_cmd_le_gap_set_advertise_tx_power(handle, args->pair.txpwr);
-    gecko_cmd_le_gap_start_advertising(handle++, le_gap_general_discoverable, le_gap_connectable_scannable);
+    gecko_cmd_le_gap_start_advertising(handle, le_gap_general_discoverable, le_gap_connectable_scannable);
     printf_socket(sock, "enter pairing mode");
 
     return BLE_EVENT_RETURN;
