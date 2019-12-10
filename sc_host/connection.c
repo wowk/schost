@@ -191,9 +191,9 @@ static int connection_dump(struct connection_t* conn, void* args)
     char address[18] = "";
     struct sock_t* sock = (struct sock_t*)args;
 
-    info("dump: %u", conn->connection);
+    //info("dump: %u", conn->connection);
     if(conn->used){
-        info("Found");
+        //info("Found");
         btaddr2str(&conn->address, address);
         printf_socket(sock, "%-4d%-25s%d", conn->connection, address, conn->addrtype);
     }
@@ -308,7 +308,7 @@ int connection_cmd_handler(struct sock_t* sock, struct option_args_t* args)
         .args = args,
     };
 
-    if(args->connection.characteristic){
+    if(args->connection.characteristic && args->connection.descriptor == 0){
         if(args->connection.characteristic != 0x100){
             cva.conn = connection_find_by_conn((uint8_t)args->connection.characteristic);
             if(!cva.conn){

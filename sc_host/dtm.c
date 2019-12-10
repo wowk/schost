@@ -175,7 +175,6 @@ int dtm_event_handler(struct sock_t* sock, struct option_args_t* args, struct ge
     switch(BGLIB_MSG_ID(evt->header)){
     case gecko_evt_test_dtm_completed_id:
         dtm_do_action(sock, args, evt);
-        info("=======dtm end=====");
         break;
 
     default:
@@ -187,8 +186,6 @@ int dtm_event_handler(struct sock_t* sock, struct option_args_t* args, struct ge
 
 int dtm_cleanup(struct sock_t* sock, struct option_args_t* args)
 {
-    info("=======DTM Cleanup=====");
-
     dtm_state = DTM_NONE;
     dtm_timer.ret = BLE_EVENT_IGNORE;
     hw_timer_del(&dtm_timer);

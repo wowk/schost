@@ -36,7 +36,7 @@ int gatt_find_local_attribute(uint16_t uuid, uint16_t* attr)
         error(0, EINVAL, "result: %s(%.4x)\n", error_summary(attrrsp->result), attrrsp->result);
         return attrrsp->result;
     }
-    info("UUID: %4X => Attribute: %.4X", uuid, attrrsp->attribute);
+    //info("UUID: %4X => Attribute: %.4X", uuid, attrrsp->attribute);
     *attr = attrrsp->attribute;
     return 0;
 }

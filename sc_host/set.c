@@ -22,8 +22,8 @@ int set_cmd_handler(struct sock_t* sock, struct option_args_t* args)
 {
     if(args->set.address[0] != 0){
         bd_addr addr;
-        memcpy(&addr, ether_aton((char*)args->set.address), 6);
-        
+        //memcpy(&addr, ether_aton((char*)args->set.address), 6);
+        str2btaddr((char*)args->set.address, &addr);      
         struct gecko_msg_system_set_bt_address_rsp_t* result = gecko_cmd_system_set_bt_address(addr);
         if (result->result) {
             printf_socket(sock, "Failed to assign BT address: %s", error_summary(result->result));

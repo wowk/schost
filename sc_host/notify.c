@@ -37,7 +37,7 @@ int notification_characteristic_add(struct notification_characteristic_list_t* l
         LIST_INSERT_HEAD(list, n, entry);
     }
 
-    info("Connection: %d, Characteristic: %d", evt->connection, evt->characteristic);
+    //info("Connection: %d, Characteristic: %d", evt->connection, evt->characteristic);
     n->waiting_confirm = 0;
     n->connection       = evt->connection;
     n->characteristic   = evt->characteristic;
@@ -82,7 +82,7 @@ notification_characteristic_find(struct notification_characteristic_list_t* list
     struct notification_characteristic_t* n;
     
     LIST_FOREACH(n, list, entry) {
-        info("Find: %d, %d", n->connection, n->characteristic);
+        //info("Find: %d, %d", n->connection, n->characteristic);
         if(n->connection == list->conn->connection && n->characteristic == characteristic){
             return n;
         }

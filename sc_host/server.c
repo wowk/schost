@@ -105,7 +105,6 @@ int schostd_main(int argc, char *argv[])
             //info("Event: %.8x\n", BGLIB_MSG_ID(evt->header));
             switch (BGLIB_MSG_ID(evt->header)) {
             case gecko_evt_system_boot_id:
-                cmd = OPT_IDLE;
                 hw_timer_list_clear();
 
                 for(int i = 0 ; i < OPT_ALL ; i ++){
