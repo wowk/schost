@@ -77,7 +77,7 @@ void discover_clear_by_connection(uint8_t connection)
 
     STAILQ_FOREACH(elem, &discover_request_queue, entry) {
         if(deleted){
-            info("clear request");
+            //info("clear request");
             STAILQ_REMOVE(&discover_request_queue, deleted, discover_request_elem_t, entry);
             free(deleted);
             deleted = NULL;
@@ -88,7 +88,7 @@ void discover_clear_by_connection(uint8_t connection)
     }
     
     if(deleted){
-        info("clear request");
+        //info("clear request");
         STAILQ_REMOVE(&discover_request_queue, deleted, discover_request_elem_t, entry);
         free(deleted);
         deleted = NULL;
@@ -119,7 +119,7 @@ int discover_services(uint8_t connection)
         return -1;
     }
     
-    info("Add Service\n");
+    //info("Add Service\n");
     STAILQ_INSERT_TAIL(&discover_request_queue, elem, entry);
     req = &elem->req;
     req->type = DISCOVER_SERVICES;
@@ -228,7 +228,6 @@ int discover_cmd_handler(struct sock_t* sock, struct option_args_t* args)
 
     discover_services(args->discover.connection);
     
-    info("Add Timer\n");
     discover_timer_arg.sock = sock;
     discover_timer_arg.arg  = args;
     hw_timer_add(&discover_timer);    
@@ -238,7 +237,6 @@ int discover_cmd_handler(struct sock_t* sock, struct option_args_t* args)
 
 int discover_event_handler(struct sock_t* sock, struct option_args_t* args, struct gecko_cmd_packet* evt)
 {
-    uint16_t vvv = 0x0001;
     struct connection_t* conn;
     struct service_t* service;
     struct characteristic_t* character;
@@ -253,7 +251,7 @@ int discover_event_handler(struct sock_t* sock, struct option_args_t* args, stru
 
     case gecko_evt_gatt_descriptor_id:
         descriptor_evt = &evt->data.evt_gatt_descriptor;
-        info("discover descriptor: %.4X", ntohs(to_uuid16(&descriptor_evt->uuid)));
+        //info("discover descriptor: %.4X", ntohs(to_uuid16(&descriptor_evt->uuid)));
         conn = connection_find_by_conn(descriptor_evt->connection);
         if(!conn){
             break;
@@ -263,10 +261,11 @@ int discover_event_handler(struct sock_t* sock, struct option_args_t* args, stru
         if(!character){
             break;
         }
-        info("Service: %.4X -> Characteristic: %.4X ->  Descriptor: %.4X", 
-                ntohs(character->service->uuid),
-                ntohs(character->uuid),
-                ntohs(to_uuid16(&descriptor_evt->uuid)));
+
+        //info("Service: %.4X -> Characteristic: %.4X ->  Descriptor: %.4X", 
+        //        ntohs(character->service->uuid),
+        //        ntohs(character->uuid),
+        //        ntohs(to_uuid16(&descriptor_evt->uuid)));
         descriptor_add(character, &conn->descriptor_list, descriptor_evt);
         //gecko_cmd_gatt_read_descriptor_value(conn->connection, descriptor_evt->descriptor);
         break;
@@ -279,7 +278,7 @@ int discover_event_handler(struct sock_t* sock, struct option_args_t* args, stru
         }
         service_add(&conn->service_list, service_evt);
         discover_characteristics(service_evt->connection, service_evt->service);
-        info("discover service: %.4X", ntohs(to_uuid16(&service_evt->uuid)));
+        //info("discover service: %.4X", ntohs(to_uuid16(&service_evt->uuid)));
         break;
 
     case gecko_evt_gatt_characteristic_id:
@@ -294,7 +293,7 @@ int discover_event_handler(struct sock_t* sock, struct option_args_t* args, stru
         }
         characteristic_add(service, &conn->characteristic_list, character_evt);
         discover_descriptors(character_evt->connection, character_evt->characteristic);
-        info("discover characteristic: %.4X", ntohs(to_uuid16(&character_evt->uuid)));
+        //info("discover characteristic: %.4X", ntohs(to_uuid16(&character_evt->uuid)));
         break;
 
     default:
@@ -306,7 +305,7 @@ int discover_event_handler(struct sock_t* sock, struct option_args_t* args, stru
 
 int discover_cleanup(struct sock_t* sock, struct option_args_t* args)
 {
-    info("Del Timer\n");
+    //info("Del Timer\n");
     discover_request_queue_clear();
     hw_timer_del(&discover_timer);
 

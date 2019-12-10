@@ -95,7 +95,7 @@ int notification_send(uint8_t connection, uint16_t characteristic, uint8_t len, 
 {
     int result;
     struct connection_t* conn;
-    struct notification_characteristic_t* n;
+    //struct notification_characteristic_t* n;
     
     conn = connection_find_by_conn(connection);
     if(!conn) {
@@ -103,18 +103,20 @@ int notification_send(uint8_t connection, uint16_t characteristic, uint8_t len, 
         return -1;
     }
 
+#if 0
     n = notification_characteristic_find(&conn->notification_list, characteristic);
-    if(!n || n->waiting_confirm){
+    if(!n){
         info("n=%p, confirm=%d", n, n?n->waiting_confirm:999);
         return -1;
     }
+#endif
 
     result = gecko_cmd_gatt_server_send_characteristic_notification(conn->connection, characteristic, len, data)->result;
     if(result){
         return result;    
     }
     
-    n->waiting_confirm = 1;
+    //n->waiting_confirm = 1;
 
     return 0;
 }

@@ -259,7 +259,6 @@ static int connection_characteristic_dump(struct connection_t* conn, void* args)
 static int connection_descriptor_dump(struct connection_t* conn, void* args)
 {
     char address[18] = "";
-    char prop_buf[32] = "";
     struct descriptor_t* descriptor;
     struct connection_visit_args_t* cva;
 

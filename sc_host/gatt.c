@@ -147,7 +147,7 @@ int gatt_cmd_handler(struct sock_t* sock, struct option_args_t* args)
                 printf_socket(sock, "Not Supported to Read Local Descriptor");
                 break;
             }
-            result = gatt_read_local_attribute_by_uuid(args->gatt.uuid, &size, value);
+            result = gatt_read_local_attribute_by_uuid(ntohs(args->gatt.uuid), &size, value);
             if(result){
                 printf_socket(sock, "read failed: %s\n", error_summary(result));
             }else{
@@ -194,7 +194,7 @@ int gatt_cmd_handler(struct sock_t* sock, struct option_args_t* args)
                 printf_socket(sock, "Not Supported to Write Local Descriptor");
                 break;
             }
-            result = gatt_write_local_attribute_by_uuid(args->gatt.uuid, 
+            result = gatt_write_local_attribute_by_uuid(ntohs(args->gatt.uuid), 
                     args->gatt.write.value.size, args->gatt.write.value.value);
             if(result){
                 printf_socket(sock, "write failed: %s\n", error_summary(result));
@@ -263,15 +263,21 @@ int gatt_cmd_handler(struct sock_t* sock, struct option_args_t* args)
             connid = args->gatt.connection;
         }
         
-        characteristic = args->gatt.uuid;
-        info("Conn: %d, Characteristic: %d", connid, ntohs(args->gatt.uuid));
+        result = gatt_find_local_attribute(ntohs(args->gatt.uuid), &characteristic);
+        if(result){
+            if(result > 0){
+                printf_socket(sock, "failed to send notification: %s", error_summary(result));
+            }else{
+                printf_socket(sock, "failed to send notification");
+            }
+            break;
+        }
         result = notification_send(connid, characteristic, 
                 args->gatt.notify.value.size, args->gatt.notify.value.value);
         if(result > 0) {
-            printf_socket(sock, "=Error(%d): %s", result, error_summary(result));
+            printf_socket(sock, "Error(%d): %s", result, error_summary(result));
             break;
         }
-        ret = BLE_EVENT_CONTINUE;
         break;
     default:
         ret = BLE_EVENT_CONTINUE;
@@ -365,7 +371,6 @@ int gatt_event_handler(struct sock_t* sock, struct option_args_t* args, struct g
         if(complete_evt->result){
             printf_socket(sock, "Error(%d): %s", complete_evt->result, error_summary(complete_evt->result));
         }
-        printf_socket(sock, "Done");
         ret = BLE_EVENT_RETURN;
         break;
     default:

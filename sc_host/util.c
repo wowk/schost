@@ -313,7 +313,6 @@ const struct ble_error_t ble_errors[] = {
 const char* error_summary(int result)
 {
     const char* errptr = "";
-    uint16_t type = (result >> 8);
 
     for(int i = 0 ; i < sizeof(ble_errors)/sizeof(ble_errors[0]) ; i ++){
         if(result == ble_errors[i].err_code){

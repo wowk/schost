@@ -31,6 +31,8 @@ int pair_bootup_handler(struct sock_t* sock, struct option_args_t* args)
 int pair_cmd_handler(struct sock_t* sock, struct option_args_t* args)
 {
     gecko_cmd_system_set_tx_power(args->dev.txpwr);
+    //gecko_cmd_sm_set_bondable_mode(0);
+    gecko_cmd_sm_delete_bondings();
     gecko_cmd_le_gap_set_advertise_phy(handle, args->pair.primary_phy, args->pair.second_phy);
     gecko_cmd_le_gap_set_advertise_timing(handle, 20, 1000, 100, 0);
     gecko_cmd_le_gap_set_advertise_tx_power(handle, args->pair.txpwr);
